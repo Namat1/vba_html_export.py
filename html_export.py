@@ -37,7 +37,7 @@ if uploaded_file:
                 continue
 
             kw = get_kw(datum_dt)
-            wochentag = calendar.day_name[datum_dt.weekday()]
+            wochentag = datum_dt.strftime("%A")  # Lokalisierter Wochentag
 
             fahrer_key = f"{nachname}, {vorname} | KW{kw}"
             eintrag = f"{datum_dt.strftime('%d.%m.%Y')} ({wochentag}): {str(uhrzeit).strip()} – {str(tour).strip()}"
@@ -55,7 +55,7 @@ if uploaded_file:
 
         export_df = pd.DataFrame(export_rows)
 
-        csv = export_df.to_csv(index=False).encode("utf-8")
+        csv = export_df.to_csv(index=False, encoding="utf-8-sig")
         st.success(f"{len(export_df)} Fahrer-Einträge exportiert.")
         st.download_button("CSV herunterladen", data=csv, file_name="touren_kompakt.csv", mime="text/csv")
 
