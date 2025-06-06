@@ -61,12 +61,7 @@ if uploaded_file:
                 except:
                     uhrzeit_str = str(uhrzeit).strip()
 
-            eintrag = {
-                "datum": datum_dt.strftime('%d.%m.%Y'),
-                "wochentag": wochentag,
-                "uhrzeit": uhrzeit_str,
-                "tour": str(tour).strip()
-            }
+            eintrag_text = f"{datum_dt.strftime('%d.%m.%Y')} ({wochentag}): {uhrzeit_str} – {str(tour).strip()}"
 
             for pos in [(3, 4), (6, 7)]:  # D/E und G/H
                 nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
@@ -75,7 +70,9 @@ if uploaded_file:
                     fahrer_key = f"{nachname}, {vorname} | KW{kw}"
                     if fahrer_key not in fahrer_dict:
                         fahrer_dict[fahrer_key] = {}
-                    fahrer_dict[fahrer_key][datum_dt.date()] = eintrag
+                    if datum_dt.date() not in fahrer_dict[fahrer_key]:
+                        fahrer_dict[fahrer_key][datum_dt.date()] = []
+                    fahrer_dict[fahrer_key][datum_dt.date()].append(eintrag_text)
 
         export_rows = []
         for fahrer, eintraege in fahrer_dict.items():
@@ -90,8 +87,8 @@ if uploaded_file:
                 wochentag_en = tag_datum.strftime("%A")
                 wochentag = wochentage_deutsch_map.get(wochentag_en, wochentag_en)
                 if tag_datum in eintraege:
-                    e = eintraege[tag_datum]
-                    eintragsliste.append(f"{e['datum']} ({e['wochentag']}): {e['uhrzeit']} – {e['tour']}")
+                    for e in eintraege[tag_datum]:
+                        eintragsliste.append(e)
                 else:
                     eintragsliste.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
 
