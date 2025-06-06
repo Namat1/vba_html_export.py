@@ -25,10 +25,6 @@ if uploaded_file:
             tour = row.iloc[15]   # Spalte P
             uhrzeit = row.iloc[8] # Spalte I
 
-            # Beide Namensvarianten prüfen
-            nachname = row.iloc[3] if pd.notna(row.iloc[3]) else row.iloc[6]
-            vorname = row.iloc[4] if pd.notna(row.iloc[4]) else row.iloc[7]
-
             if pd.isna(datum) or pd.isna(tour):
                 continue
 
@@ -54,12 +50,20 @@ if uploaded_file:
                 except:
                     uhrzeit_str = str(uhrzeit).strip()
 
-            fahrer_key = f"{nachname}, {vorname} | KW{kw}"
             eintrag = f"{datum_dt.strftime('%d.%m.%Y')} ({wochentag}): {uhrzeit_str} – {str(tour).strip()}"
 
-            if fahrer_key not in fahrer_dict:
-                fahrer_dict[fahrer_key] = []
-            fahrer_dict[fahrer_key].append(eintrag)
+            # Beide Fahrer prüfen: D/E und G/H
+            fahrer_infos = []
+            if pd.notna(row.iloc[3]) and pd.notna(row.iloc[4]):
+                fahrer_infos.append((row.iloc[3], row.iloc[4]))  # D/E
+            if pd.notna(row.iloc[6]) and pd.notna(row.iloc[7]):
+                fahrer_infos.append((row.iloc[6], row.iloc[7]))  # G/H
+
+            for nachname, vorname in fahrer_infos:
+                fahrer_key = f"{nachname}, {vorname} | KW{kw}"
+                if fahrer_key not in fahrer_dict:
+                    fahrer_dict[fahrer_key] = []
+                fahrer_dict[fahrer_key].append(eintrag)
 
         export_rows = []
         for fahrer, eintraege in fahrer_dict.items():
