@@ -18,7 +18,8 @@ if uploaded_file:
     try:
         df = pd.read_excel(uploaded_file, sheet_name="Touren", skiprows=4, engine="openpyxl")
 
-        daten = []
+        fahrer_dict = {}
+
         for idx, row in df.iterrows():
             datum = row.iloc[14]  # Spalte O
             tour = row.iloc[15]   # Spalte P
@@ -38,21 +39,25 @@ if uploaded_file:
             kw = get_kw(datum_dt)
             wochentag = calendar.day_name[datum_dt.weekday()]
 
-            daten.append({
-                "Kalenderwoche": kw,
-                "Nachname": nachname,
-                "Vorname": vorname,
-                "Datum": datum_dt.strftime("%d.%m.%Y"),
-                "Wochentag": wochentag,
-                "Uhrzeit": str(uhrzeit) if pd.notna(uhrzeit) else "",
-                "Tour": str(tour).strip()
+            fahrer_key = f"{nachname}, {vorname} | KW{kw}"
+            eintrag = f"{datum_dt.strftime('%d.%m.%Y')} ({wochentag}): {str(uhrzeit).strip()} – {str(tour).strip()}"
+
+            if fahrer_key not in fahrer_dict:
+                fahrer_dict[fahrer_key] = []
+            fahrer_dict[fahrer_key].append(eintrag)
+
+        export_rows = []
+        for fahrer, eintraege in fahrer_dict.items():
+            export_rows.append({
+                "Fahrer": fahrer,
+                "Einsätze": " | ".join(eintraege)
             })
 
-        export_df = pd.DataFrame(daten)
+        export_df = pd.DataFrame(export_rows)
 
         csv = export_df.to_csv(index=False).encode("utf-8")
-        st.success(f"{len(export_df)} Einträge exportiert.")
-        st.download_button("CSV herunterladen", data=csv, file_name="touren_export.csv", mime="text/csv")
+        st.success(f"{len(export_df)} Fahrer-Einträge exportiert.")
+        st.download_button("CSV herunterladen", data=csv, file_name="touren_kompakt.csv", mime="text/csv")
 
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten: {e}")
