@@ -4,15 +4,15 @@ from io import BytesIO
 from datetime import datetime
 import calendar
 
-# Deutsche Wochentage
+# Deutsche Wochentage mit Sonntag als Wochenstart
 wochentage_deutsch = {
+    6: "Sonntag",
     0: "Montag",
     1: "Dienstag",
     2: "Mittwoch",
     3: "Donnerstag",
     4: "Freitag",
-    5: "Samstag",
-    6: "Sonntag"
+    5: "Samstag"
 }
 
 # Kalenderwoche berechnen
@@ -79,21 +79,22 @@ if uploaded_file:
 
         export_rows = []
         for fahrer, eintraege in fahrer_dict.items():
-            # Startdatum bestimmen
+            # Startdatum: Sonntag der Woche
             alle_daten = list(eintraege.keys())
             if not alle_daten:
                 continue
-            start_datum = min(alle_daten)
-            start_montag = start_datum - pd.Timedelta(days=start_datum.weekday())
+            beliebiges_datum = min(alle_daten)
+            start_sonntag = beliebiges_datum - pd.Timedelta(days=(beliebiges_datum.weekday() + 1) % 7)
             eintragsliste = []
             for i in range(7):
-                tag_datum = start_montag + pd.Timedelta(days=i)
+                tag_datum = start_sonntag + pd.Timedelta(days=i)
+                wtag_idx = (tag_datum.weekday() + 1) % 7
+                wtag = wochentage_deutsch[wtag_idx]
                 if tag_datum in eintraege:
                     e = eintraege[tag_datum]
                     eintragsliste.append(f"{e['datum']} ({e['wochentag']}): {e['uhrzeit']} – {e['tour']}")
                 else:
-                    wtag = wochentage_deutsch[i]
-                    eintragsliste.append(f"{(start_montag + pd.Timedelta(days=i)).strftime('%d.%m.%Y')} ({wtag}): –")
+                    eintragsliste.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wtag}): –")
 
             export_rows.append({
                 "Fahrer": fahrer,
