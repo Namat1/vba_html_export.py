@@ -61,7 +61,7 @@ if uploaded_file:
                 except:
                     uhrzeit_str = str(uhrzeit).strip()
 
-            eintrag_text = f"{datum_dt.strftime('%d.%m.%Y')} ({wochentag}): {uhrzeit_str} – {str(tour).strip()}"
+            eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
 
             for pos in [(3, 4), (6, 7)]:  # D/E und G/H
                 nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
@@ -72,39 +72,34 @@ if uploaded_file:
                         fahrer_dict[fahrer_key] = {}
                     if datum_dt.date() not in fahrer_dict[fahrer_key]:
                         fahrer_dict[fahrer_key][datum_dt.date()] = []
-                    fahrer_dict[fahrer_key][datum_dt.date()].append(eintrag_text)
-
-        # Fahrer zusammenführen, KW-bereinigt
-        export_dict = {}
-        for fahrer_kw, eintraege in fahrer_dict.items():
-            if fahrer_kw not in export_dict:
-                export_dict[fahrer_kw] = {}
-            for tag, liste in eintraege.items():
-                if tag not in export_dict[fahrer_kw]:
-                    export_dict[fahrer_kw][tag] = []
-                export_dict[fahrer_kw][tag].extend(liste)
+                    if eintrag_text not in fahrer_dict[fahrer_key][datum_dt.date()]:
+                        fahrer_dict[fahrer_key][datum_dt.date()].append(eintrag_text)
 
         export_rows = []
-        for fahrer, eintraege in export_dict.items():
-            alle_daten = list(eintraege.keys())
-            if not alle_daten:
+        for fahrer_key, eintraege in fahrer_dict.items():
+            if not eintraege:
                 continue
-            beliebiges_datum = min(alle_daten)
-            start_sonntag = beliebiges_datum - pd.Timedelta(days=(beliebiges_datum.weekday() + 1) % 7)
-            eintragsliste = []
+
+            start_datum = min(eintraege.keys())
+            start_sonntag = start_datum - pd.Timedelta(days=(start_datum.weekday() + 1) % 7)
+
+            wochen_eintraege = []
             for i in range(7):
                 tag_datum = start_sonntag + pd.Timedelta(days=i)
                 wochentag_en = tag_datum.strftime("%A")
                 wochentag = wochentage_deutsch_map.get(wochentag_en, wochentag_en)
+
                 if tag_datum in eintraege:
-                    for e in eintraege[tag_datum]:
-                        eintragsliste.append(e)
+                    for eintrag in eintraege[tag_datum]:
+                        zeile = f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): {eintrag}"
+                        wochen_eintraege.append(zeile)
                 else:
-                    eintragsliste.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
+                    zeile = f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –"
+                    wochen_eintraege.append(zeile)
 
             export_rows.append({
-                "Fahrer": fahrer,
-                "Einsätze": " | ".join(eintragsliste)
+                "Fahrer": fahrer_key,
+                "Einsätze": " | ".join(wochen_eintraege)
             })
 
         export_df = pd.DataFrame(export_rows)
