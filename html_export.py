@@ -14,7 +14,7 @@ def get_calendar_week(date):
 def clean_filename(name):
     return "".join(c for c in name if c.isalnum() or c in "._- ").strip().replace(" ", "_")
 
-def create_html_from_row_final(ws, row_idx, base_date, kw, fahrer_name):
+def create_html_from_row(ws, row_idx, base_date, kw, fahrer_name):
     tage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
     html = f"""<!DOCTYPE html>
 <html lang='de'>
@@ -41,13 +41,13 @@ def create_html_from_row_final(ws, row_idx, base_date, kw, fahrer_name):
   <h2>{fahrer_name} – Schichtbeginn: {base_date.strftime('%d.%m.%Y')} bis {(base_date + timedelta(days=6)).strftime('%d.%m.%Y')}</h2>
   <table><thead><tr><th>Datum</th><th>Wochentag</th><th>Uhrzeit</th><th>Tour / Aufgabe</th></tr></thead><tbody>"""
 
-    for j in range(1, 8):
-        einsatz_count = 0
+    for j in range(1, 8):  # j = 1 bis 7 → Sonntag bis Samstag
         tag_datum = base_date + timedelta(days=j - 1)
         wochentag = tage[j - 1]
+        einsatz_count = 0
 
-        for k in range(2):
-            col_idx = 5 + (j - 1) * 2 + k
+        for k in range(2):  # max 2 Touren pro Tag
+            col_idx = 5 + (j - 1) * 2 + k  # ab Spalte F (6), also index=5
             uhrzeit = ws.cell(row=row_idx, column=col_idx + 1).value
             tourtext = ws.cell(row=row_idx + 1, column=col_idx + 1).value
 
@@ -85,11 +85,11 @@ def process_excel_final_output(excel_bytes):
         wb = load_workbook(filename=BytesIO(excel_bytes), data_only=True)
         ws = wb["Druck Fahrer"]
 
-        datum = ws["E2"].value
-        if not isinstance(datum, datetime):
-            datum = pd.to_datetime(datum)
+        base_date = ws["E2"].value  # Sonntag als Startdatum
+        if not isinstance(base_date, datetime):
+            base_date = pd.to_datetime(base_date)
 
-        kw = get_calendar_week(datum)
+        kw = get_calendar_week(base_date)
         name_dict = {}
 
         i = 11
@@ -102,7 +102,7 @@ def process_excel_final_output(excel_bytes):
                 final_name = base_name if count == 0 else f"{base_name}_{count}"
                 safe_name = clean_filename(final_name)
 
-                html = create_html_from_row_final(ws, i, datum, kw, final_name)
+                html = create_html_from_row(ws, i, base_date, kw, final_name)
                 html_path = Path(tmpdirname) / f"KW{kw}_{safe_name}.html"
                 with open(html_path, "w", encoding="utf-8") as f:
                     f.write(html)
@@ -118,16 +118,16 @@ def process_excel_final_output(excel_bytes):
     in_memory_zip.seek(0)
     return in_memory_zip
 
-# Streamlit App
-st.set_page_config(page_title="HTML Planer", layout="centered")
-st.title("Fahrer-Wochenplaner (Excel → HTML)")
+# Streamlit Oberfläche
+st.set_page_config(page_title="HTML-Plan Export", layout="centered")
+st.title("Fahrer-Wochenplan (Excel → HTML)")
 
 uploaded_file = st.file_uploader("Excel-Datei mit dem Blatt 'Druck Fahrer' hochladen", type=["xlsx", "xlsm"])
 
 if uploaded_file:
     try:
         zip_bytes = process_excel_final_output(uploaded_file.read())
-        st.success("Export erfolgreich!")
+        st.success("Export abgeschlossen ✅")
         st.download_button(
             label="ZIP-Datei herunterladen",
             data=zip_bytes,
@@ -135,4 +135,4 @@ if uploaded_file:
             mime="application/zip"
         )
     except Exception as e:
-        st.error(f"Fehler beim Verarbeiten der Datei: {e}")
+        st.error(f"Fehler: {e}")
