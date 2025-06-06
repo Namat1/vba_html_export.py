@@ -29,8 +29,10 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
 <body>
 <div class="container-outer"><div class="container">
 <div class="headline-block">
-  <div class="headline-kw">KW{kw}</div>
-  <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+  <div class="headline-kw-box">
+    <div class="headline-kw">KW {kw}</div>
+    <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+  </div>
 </div>"""
 
     for eintrag in eintraege:
@@ -38,7 +40,6 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         date_obj = pd.to_datetime(date_text.split(" ")[0], format="%d.%m.%Y")
         weekday = date_text.split("(")[-1].replace(")", "")
 
-        # Uhrzeit & Tour trennen
         if "–" in content:
             uhrzeit, tour = [x.strip() for x in content.split("–", 1)]
         else:
@@ -88,43 +89,50 @@ body {
   margin: 24px auto;
   background: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-  border: 1px solid #dce3ec;
+  border: 2px solid #b6c3d7;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
   padding: 18px 14px;
 }
 .headline-block {
-  text-align: center;
+  display: flex;
+  justify-content: center;
   margin-bottom: 20px;
+}
+.headline-kw-box {
+  text-align: center;
+  border: 2px solid #2564e4;
+  border-radius: 12px;
+  padding: 10px 16px;
+  background: #eaf1fb;
 }
 .headline-kw {
   font-size: 1.6rem;
   font-weight: 800;
-  background: linear-gradient(92deg, #2564e4, #4b91f4);
-  color: #ffffff;
-  padding: 6px 16px;
-  border-radius: 12px;
-  display: inline-block;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+  color: #2564e4;
+  margin-bottom: 4px;
 }
 .headline-period {
-  margin-top: 6px;
   font-size: 0.9rem;
   font-weight: 600;
-  background: #eef3fb;
   color: #1f4d91;
-  padding: 4px 10px;
-  border-radius: 10px;
-  border: 1px solid #cfdcf0;
-  display: inline-block;
 }
 
 .daycard {
   background: #ffffff;
-  border: 1px solid #d8e0eb;
-  border-radius: 10px;
+  border: 2px solid #9db0c6;
+  border-radius: 12px;
   padding: 14px;
-  margin-bottom: 14px;
-  box-shadow: 0 2px 6px rgba(60, 60, 60, 0.03);
+  margin-bottom: 16px;
+  box-shadow: 0 2px 6px rgba(60, 60, 60, 0.05);
+}
+
+.daycard.samstag {
+  background: #fff7ef;
+  border-color: #f4a953;
+}
+.daycard.sonntag {
+  background: #fff0f0;
+  border-color: #e06666;
 }
 
 .header-row {
@@ -177,7 +185,7 @@ body {
   font-weight: 600;
   background: #f3f6fc;
   padding: 6px 10px;
-  border: 1px solid #c6d2e5;
+  border: 1px solid #a9bad3;
   border-radius: 6px;
   display: inline-block;
   min-width: 40px;
@@ -190,19 +198,6 @@ body {
   .info-block {
     flex: 1 1 100%;
   }
-}
-
-/* Samstag & Sonntag außerhalb des media-queries! */
-.daycard.samstag {
-  background: #fff7ef;
-  border-color: #f4be83;
-}
-.daycard.sonntag {
-  background: #fff0f0;
-  border-color: #ee8d8d;
-}
-
-
 }
 
 """
