@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from io import BytesIO
 from zipfile import ZipFile
 from datetime import datetime
 import tempfile
@@ -13,24 +14,24 @@ wochentage_deutsch_map = {
 
 # Kalenderwoche berechnen
 def get_kw(datum):
-    return datum.isocalendar()[1] + 1  # KW +1 wie gewünscht
+    return datum.isocalendar()[1] + 1  # +1 wie gewünscht
 
-# HTML-Template generieren
+# HTML-Template
 def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     html = f"""<!DOCTYPE html>
-<html lang=\"de\">
+<html lang="de">
 <head>
-  <meta charset=\"UTF-8\">
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KW{kw} – {fahrer_name}</title>
   <style>{css_styles}</style>
 </head>
 <body>
-<div class=\"container-outer\"><div class=\"container\">
-<div class=\"headline-block\">
-  <div class=\"headline-kw-box\">
-    <div class=\"headline-kw\">KW {kw}</div>
-    <div class=\"headline-period\">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+<div class="container-outer"><div class="container">
+<div class="headline-block">
+  <div class="headline-kw-box">
+    <div class="headline-kw">KW {kw}</div>
+    <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
   </div>
 </div>"""
 
@@ -51,20 +52,20 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
             card_class += " sonntag"
 
         html += f"""
-<div class=\"{card_class}\">
-  <div class=\"header-row\">
-    <div class=\"prominent-date\">{date_obj.strftime('%d.%m.%Y')}</div>
-    <div class=\"weekday\">{weekday}</div>
-    <div class=\"prominent-name\">{fahrer_name}</div>
+<div class="{card_class}">
+  <div class="header-row">
+    <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
+    <div class="weekday">{weekday}</div>
+    <div class="prominent-name">{fahrer_name}</div>
   </div>
-  <div class=\"info\">
-    <div class=\"info-block\">
-      <div class=\"label\">Tour:</div>
-      <div class=\"value\">{tour}</div>
+  <div class="info">
+    <div class="info-block">
+      <div class="label">Tour:</div>
+      <div class="value">{tour}</div>
     </div>
-    <div class=\"info-block\">
-      <div class=\"label\">Uhrzeit:</div>
-      <div class=\"value\">{uhrzeit}</div>
+    <div class="info-block">
+      <div class="label">Uhrzeit:</div>
+      <div class="value">{uhrzeit}</div>
     </div>
   </div>
 </div>"""
@@ -97,13 +98,16 @@ css_styles = """body { font-family: 'Inter', Arial, sans-serif; background: #e3e
 
 # Streamlit UI
 st.set_page_config(page_title="Touren-Export", layout="centered")
-st.title("Tourenplan als HTML je KW exportieren")
+st.title("Tourenplan – CSV + HTML-Export mit Kalenderwoche")
 
-uploaded_file = st.file_uploader("Excel-Datei hochladen (Blatt 'Touren')", type=["xlsx"])
+uploaded_files = st.file_uploader("Excel-Dateien hochladen (Blatt 'Touren')", type=["xlsx"], accept_multiple_files=True)
 
-if uploaded_file:
-    try:
-        df = pd.read_excel(uploaded_file, sheet_name="Touren", skiprows=4, engine="openpyxl")
+if uploaded_files:
+    html_files = {}
+    export_rows = []
+
+    for file in uploaded_files:
+        df = pd.read_excel(file, sheet_name="Touren", skiprows=4, engine="openpyxl")
 
         fahrer_dict = {}
         for _, row in df.iterrows():
@@ -113,6 +117,7 @@ if uploaded_file:
             if pd.isna(datum): continue
             try: datum_dt = pd.to_datetime(datum)
             except: continue
+
             if pd.isna(uhrzeit): uhrzeit_str = "–"
             elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0: uhrzeit_str = "00:00"
             elif isinstance(uhrzeit, datetime): uhrzeit_str = uhrzeit.strftime("%H:%M")
@@ -120,6 +125,7 @@ if uploaded_file:
                 try: uhrzeit_parsed = pd.to_datetime(uhrzeit)
                 except: uhrzeit_str = str(uhrzeit).strip()
                 else: uhrzeit_str = uhrzeit_parsed.strftime("%H:%M")
+
             eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
             for pos in [(3, 4), (6, 7)]:
                 nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
@@ -132,8 +138,6 @@ if uploaded_file:
                         fahrer_dict[fahrer_name][datum_dt.date()] = []
                     if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
                         fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
-
-        html_files = {}
 
         for fahrer_name, eintraege in fahrer_dict.items():
             if not eintraege: continue
@@ -149,33 +153,30 @@ if uploaded_file:
                         wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): {eintrag}")
                 else:
                     wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
+            export_rows.append({"Fahrer": fahrer_name, "Einsätze": " | ".join(wochen_eintraege)})
 
             html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
-            kw_folder = f"KW{kw:02d}"
-            if kw_folder not in html_files:
-                html_files[kw_folder] = {}
-            nachname_clean = fahrer_name.split(",")[0].strip().replace(" ", "_")
-            vorname_clean = fahrer_name.split(",")[1].strip().replace(" ", "_") if "," in fahrer_name else ""
-            filename = f"{nachname_clean}_{vorname_clean}.html"
+            name_html = fahrer_name.split(",")[0].replace(" ", "_")
+            foldername = f"KW{kw:02d}"
+            filename = f"{foldername}_{name_html}.html"
+            html_files[filename] = html_code
 
-            html_files[kw_folder][filename] = html_code
+    # Export erstellen
+    export_df = pd.DataFrame(export_rows)
+    csv = export_df.to_csv(index=False, encoding="utf-8-sig")
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            zip_path = os.path.join(tmpdir, "touren_html_export.zip")
-            with ZipFile(zip_path, "w") as zipf:
-                for kw_folder, file_dict in html_files.items():
-                    for filename, html_content in file_dict.items():
-                        folder_path = os.path.join(tmpdir, kw_folder)
-                        os.makedirs(folder_path, exist_ok=True)
-                        file_path = os.path.join(folder_path, filename)
-                        with open(file_path, "w", encoding="utf-8") as f:
-                            f.write(html_content)
-                        zipf.write(file_path, arcname=os.path.join(kw_folder, filename))
-            with open(zip_path, "rb") as f:
-                zip_bytes = f.read()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        zip_path = os.path.join(tmpdir, "touren_html_export.zip")
+        with ZipFile(zip_path, "w") as zipf:
+            for name, content in html_files.items():
+                full_path = os.path.join(tmpdir, name)
+                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                with open(full_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                zipf.write(full_path, arcname=name)
+        with open(zip_path, "rb") as f:
+            zip_bytes = f.read()
 
-        st.success("HTML-Dateien wurden erzeugt und nach KW sortiert.")
-        st.download_button("ZIP herunterladen", data=zip_bytes, file_name="touren_nach_kw.zip", mime="application/zip")
-
-    except Exception as e:
-        st.error(f"Fehler beim Verarbeiten: {e}")
+    st.success(f"{len(export_df)} Fahrer-Einträge verarbeitet.")
+    st.download_button("CSV herunterladen", data=csv, file_name="touren_kompakt.csv", mime="text/csv")
+    st.download_button("HTML-Archiv (ZIP) herunterladen", data=zip_bytes, file_name="touren_html_export.zip", mime="application/zip")
