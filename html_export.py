@@ -51,29 +51,25 @@ if uploaded_file:
 
             eintrag = f"{datum_dt.strftime('%d.%m.%Y')} ({wochentag}): {uhrzeit_str} – {str(tour).strip()}"
 
-            fahrer_infos = []
-
-            # Erster Fahrer (D/E)
+            # Fahrer 1 (D/E)
             if pd.notna(row.iloc[3]) or pd.notna(row.iloc[4]):
-                nachname1 = str(row.iloc[3]).strip().title() if pd.notna(row.iloc[3]) else ""
-                vorname1 = str(row.iloc[4]).strip().title() if pd.notna(row.iloc[4]) else ""
-                if nachname1 or vorname1:
-                    fahrer_infos.append((nachname1, vorname1))
+                nachname = str(row.iloc[3]).strip().title() if pd.notna(row.iloc[3]) else ""
+                vorname = str(row.iloc[4]).strip().title() if pd.notna(row.iloc[4]) else ""
+                if nachname or vorname:
+                    fahrer_key = f"{nachname}, {vorname} | KW{kw}"
+                    if fahrer_key not in fahrer_dict:
+                        fahrer_dict[fahrer_key] = []
+                    fahrer_dict[fahrer_key].append(eintrag)
 
-            # Zweiter Fahrer (G/H)
+            # Fahrer 2 (G/H)
             if pd.notna(row.iloc[6]) or pd.notna(row.iloc[7]):
-                nachname2 = str(row.iloc[6]).strip().title() if pd.notna(row.iloc[6]) else ""
-                vorname2 = str(row.iloc[7]).strip().title() if pd.notna(row.iloc[7]) else ""
-                if nachname2 or vorname2:
-                    fahrer_infos.append((nachname2, vorname2))
-
-            for nachname, vorname in fahrer_infos:
-                if not nachname and not vorname:
-                    continue
-                fahrer_key = f"{nachname}, {vorname} | KW{kw}"
-                if fahrer_key not in fahrer_dict:
-                    fahrer_dict[fahrer_key] = []
-                fahrer_dict[fahrer_key].append(eintrag)
+                nachname = str(row.iloc[6]).strip().title() if pd.notna(row.iloc[6]) else ""
+                vorname = str(row.iloc[7]).strip().title() if pd.notna(row.iloc[7]) else ""
+                if nachname or vorname:
+                    fahrer_key = f"{nachname}, {vorname} | KW{kw}"
+                    if fahrer_key not in fahrer_dict:
+                        fahrer_dict[fahrer_key] = []
+                    fahrer_dict[fahrer_key].append(eintrag)
 
         export_rows = []
         for fahrer, eintraege in fahrer_dict.items():
