@@ -45,6 +45,7 @@ if uploaded_file:
             except:
                 continue
 
+            kw = get_kw(datum_dt)
             wochentag_en = datum_dt.strftime("%A")
             wochentag = wochentage_deutsch_map.get(wochentag_en, wochentag_en)
 
@@ -81,12 +82,11 @@ if uploaded_file:
                 continue
 
             start_datum = min(eintraege.keys())
-            start_montag = start_datum - pd.Timedelta(days=(start_datum.weekday()))  # Montag als Wochenanfang
-            kw = get_kw(start_montag)
+            start_sonntag = start_datum - pd.Timedelta(days=(start_datum.weekday() + 1) % 7)
 
             wochen_eintraege = []
             for i in range(7):
-                tag_datum = start_montag + pd.Timedelta(days=i)
+                tag_datum = start_sonntag + pd.Timedelta(days=i)
                 wochentag_en = tag_datum.strftime("%A")
                 wochentag = wochentage_deutsch_map.get(wochentag_en, wochentag_en)
 
@@ -100,7 +100,6 @@ if uploaded_file:
 
             export_rows.append({
                 "Fahrer": fahrer_name,
-                "Kalenderwoche": f"KW{kw}",
                 "Einsätze": " | ".join(wochen_eintraege)
             })
 
