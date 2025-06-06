@@ -34,24 +34,23 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
   </div>
 </div>"""
 
+    for eintrag in eintraege:
+        date_text, content = eintrag.split(": ", 1)
+        date_obj = pd.to_datetime(date_text.split(" ")[0], format="%d.%m.%Y")
+        weekday = date_text.split("(")[-1].replace(")", "")
 
-   for eintrag in eintraege:
-    date_text, content = eintrag.split(": ", 1)
-    date_obj = pd.to_datetime(date_text.split(" ")[0], format="%d.%m.%Y")
-    weekday = date_text.split("(")[-1].replace(")", "")
+        if "–" in content:
+            uhrzeit, tour = [x.strip() for x in content.split("–", 1)]
+        else:
+            uhrzeit, tour = "–", content.strip()
 
-    if "–" in content:
-        uhrzeit, tour = [x.strip() for x in content.split("–", 1)]
-    else:
-        uhrzeit, tour = "–", content.strip()
+        card_class = "daycard"
+        if weekday == "Samstag":
+            card_class += " samstag"
+        elif weekday == "Sonntag":
+            card_class += " sonntag"
 
-    card_class = "daycard"
-    if weekday == "Samstag":
-        card_class += " samstag"
-    elif weekday == "Sonntag":
-        card_class += " sonntag"
-
-    html += f"""
+        html += f"""
 <div class=\"{card_class}\">
   <div class=\"header-row\">
     <div class=\"prominent-date\">{date_obj.strftime('%d.%m.%Y')}</div>
@@ -68,11 +67,11 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
       <div class=\"value\">{uhrzeit}</div>
     </div>
   </div>
-</div>"""  # <-- korrekt abgeschlossen
-
+</div>"""
 
     html += "</div></div></body></html>"
     return html
+
 
 # CSS ausgelagert
 css_styles = """body { font-family: 'Inter', Arial, sans-serif; background: #e3e7ee; margin: 0; padding: 0; color: #1c1c1c; font-size: 15px; }
@@ -155,8 +154,10 @@ if uploaded_file:
             kw_folder = f"KW{kw:02d}"
             if kw_folder not in html_files:
                 html_files[kw_folder] = {}
-            name_html = fahrer_name.split(",")[0].replace(" ", "_")
-            filename = f"{name_html}.html"
+            nachname_clean = fahrer_name.split(",")[0].strip().replace(" ", "_")
+            vorname_clean = fahrer_name.split(",")[1].strip().replace(" ", "_") if "," in fahrer_name else ""
+            filename = f"{nachname_clean}_{vorname_clean}.html"
+
             html_files[kw_folder][filename] = html_code
 
         with tempfile.TemporaryDirectory() as tmpdir:
