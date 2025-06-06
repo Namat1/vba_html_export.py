@@ -41,19 +41,19 @@ def create_html_from_row(ws, row_idx, base_date, kw, fahrer_name):
   <h2>{fahrer_name} – Schichtbeginn: {base_date.strftime('%d.%m.%Y')} bis {(base_date + timedelta(days=6)).strftime('%d.%m.%Y')}</h2>
   <table><thead><tr><th>Datum</th><th>Wochentag</th><th>Uhrzeit</th><th>Tour / Aufgabe</th></tr></thead><tbody>"""
 
-    for j in range(1, 8):  # j = 1 bis 7 → Sonntag bis Samstag
-        tag_datum = base_date + timedelta(days=j - 1)
-        wochentag = tage[j - 1]
+    for j in range(7):  # j = 0 (Sonntag) bis 6 (Samstag)
+        tag_datum = base_date + timedelta(days=j)
+        wochentag = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][j]
         einsatz_count = 0
 
-        for k in range(2):  # max 2 Touren pro Tag
-            col_idx = 5 + (j - 1) * 2 + k  # ab Spalte F (6), also index=5
-            uhrzeit = ws.cell(row=row_idx, column=col_idx + 1).value
-            tourtext = ws.cell(row=row_idx + 1, column=col_idx + 1).value
+        # korrekt berechnete Spalten: Uhrzeit in F/H/... = 6 + j*2, Tour in G/I/... = +1
+        uhrzeit_col = 6 + j * 2
+        tour_col = uhrzeit_col + 1
 
-            if tourtext is None or str(tourtext).strip() in ("", "0", "None"):
-                continue
+        uhrzeit = ws.cell(row=row_idx, column=uhrzeit_col).value
+        tourtext = ws.cell(row=row_idx + 1, column=tour_col).value
 
+        if tourtext is not None and str(tourtext).strip() not in ("", "0", "None"):
             if isinstance(uhrzeit, (int, float)):
                 if uhrzeit in [0, 1]:
                     uhrzeit_str = "00:00"
@@ -85,7 +85,7 @@ def process_excel_final_output(excel_bytes):
         wb = load_workbook(filename=BytesIO(excel_bytes), data_only=True)
         ws = wb["Druck Fahrer"]
 
-        base_date = ws["E2"].value  # Sonntag als Startdatum
+        base_date = ws["E2"].value
         if not isinstance(base_date, datetime):
             base_date = pd.to_datetime(base_date)
 
@@ -118,8 +118,8 @@ def process_excel_final_output(excel_bytes):
     in_memory_zip.seek(0)
     return in_memory_zip
 
-# Streamlit Oberfläche
-st.set_page_config(page_title="HTML-Plan Export", layout="centered")
+# Streamlit-Oberfläche
+st.set_page_config(page_title="HTML-Export", layout="centered")
 st.title("Fahrer-Wochenplan (Excel → HTML)")
 
 uploaded_file = st.file_uploader("Excel-Datei mit dem Blatt 'Druck Fahrer' hochladen", type=["xlsx", "xlsm"])
@@ -127,7 +127,7 @@ uploaded_file = st.file_uploader("Excel-Datei mit dem Blatt 'Druck Fahrer' hochl
 if uploaded_file:
     try:
         zip_bytes = process_excel_final_output(uploaded_file.read())
-        st.success("Export abgeschlossen ✅")
+        st.success("Export erfolgreich!")
         st.download_button(
             label="ZIP-Datei herunterladen",
             data=zip_bytes,
@@ -135,4 +135,4 @@ if uploaded_file:
             mime="application/zip"
         )
     except Exception as e:
-        st.error(f"Fehler: {e}")
+        st.error(f"Fehler beim Verarbeiten der Datei: {e}")
