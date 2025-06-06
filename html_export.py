@@ -272,12 +272,15 @@ if uploaded_file:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = os.path.join(tmpdir, "touren_html_export.zip")
+            kw_folder = f"KW{kw:02d}"
             with ZipFile(zip_path, "w") as zipf:
                 for name, content in html_files.items():
-                    filepath = os.path.join(tmpdir, name)
-                    with open(filepath, "w", encoding="utf-8") as f:
+                    subpath = os.path.join(tmpdir, kw_folder, name)
+                    os.makedirs(os.path.dirname(subpath), exist_ok=True)
+                    with open(subpath, "w", encoding="utf-8") as f:
                         f.write(content)
-                    zipf.write(filepath, arcname=name)
+                    zipf.write(subpath, arcname=os.path.join(kw_folder, name))
+
             with open(zip_path, "rb") as f:
                 zip_bytes = f.read()
 
