@@ -190,6 +190,9 @@ body {
   .info-block {
     flex: 1 1 100%;
   }
+}
+
+/* Samstag & Sonntag außerhalb des media-queries! */
 .daycard.samstag {
   background: #fff7ef;
   border-color: #f4be83;
@@ -198,6 +201,7 @@ body {
   background: #fff0f0;
   border-color: #ee8d8d;
 }
+
 
 }
 
