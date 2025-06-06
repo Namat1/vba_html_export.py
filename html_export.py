@@ -18,16 +18,14 @@ if uploaded_file:
     try:
         df = pd.read_excel(uploaded_file, sheet_name="Touren", skiprows=4, engine="openpyxl")
 
-        # Nur relevante Spalten extrahieren
         daten = []
         for idx, row in df.iterrows():
-            datum = row.get("O")
-            tour = row.get("P")
-            uhrzeit = row.get("I")
+            datum = row.iloc[14]  # Spalte O
+            tour = row.iloc[15]   # Spalte P
+            uhrzeit = row.iloc[8] # Spalte I
 
-            # Name zusammensetzen aus Spalte D+E oder G+H
-            nachname = row.get("D") if pd.notna(row.get("D")) else row.get("G")
-            vorname = row.get("E") if pd.notna(row.get("E")) else row.get("H")
+            nachname = row.iloc[3] if pd.notna(row.iloc[3]) else row.iloc[6]  # D oder G
+            vorname = row.iloc[4] if pd.notna(row.iloc[4]) else row.iloc[7]  # E oder H
 
             if pd.isna(datum) or pd.isna(tour):
                 continue
