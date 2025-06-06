@@ -75,10 +75,9 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
 
 
 # CSS-Stile
-css_styles = """
 body {
   font-family: 'Inter', Arial, sans-serif;
-  background: #f4f6fb;
+  background: #e3e7ee;
   margin: 0;
   padding: 0;
   color: #1c1c1c;
@@ -86,12 +85,12 @@ body {
 }
 .container-outer {
   max-width: 460px;
-  margin: 24px auto;
-  background: #ffffff;
+  margin: 28px auto;
+  background: #f9fafc;
   border-radius: 16px;
-  border: 2px solid #b6c3d7;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-  padding: 18px 14px;
+  border: 3px solid #5c6f8c;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  padding: 20px 16px;
 }
 .headline-block {
   display: flex;
@@ -100,68 +99,68 @@ body {
 }
 .headline-kw-box {
   text-align: center;
-  border: 2px solid #2564e4;
-  border-radius: 12px;
-  padding: 10px 16px;
-  background: #eaf1fb;
+  border: 3px solid #2a4a9c;
+  border-radius: 14px;
+  padding: 10px 18px;
+  background: #dde5f3;
 }
 .headline-kw {
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: #2564e4;
+  font-size: 1.7rem;
+  font-weight: 900;
+  color: #1e3f85;
   margin-bottom: 4px;
 }
 .headline-period {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #1f4d91;
+  color: #2f528e;
 }
 
 .daycard {
   background: #ffffff;
-  border: 2px solid #9db0c6;
+  border: 3px solid #6c7d99;
   border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 16px;
-  box-shadow: 0 2px 6px rgba(60, 60, 60, 0.05);
+  padding: 16px;
+  margin-bottom: 18px;
+  box-shadow: 0 3px 10px rgba(30, 30, 30, 0.05);
 }
 
 .daycard.samstag {
-  background: #fff7ef;
-  border-color: #f4a953;
+  background: #fef4e8;
+  border-color: #e89b3d;
 }
 .daycard.sonntag {
-  background: #fff0f0;
-  border-color: #e06666;
+  background: #fceaea;
+  border-color: #d65656;
 }
 
 .header-row {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 .prominent-date,
 .weekday,
 .prominent-name {
   flex: 1 1 30%;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   text-align: center;
   color: #ffffff;
-  padding: 6px 10px;
+  padding: 7px 10px;
   border-radius: 8px;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
 .prominent-date {
-  background: linear-gradient(to right, #b14a4a, #d86565);
+  background: linear-gradient(to right, #933636, #c74e4e);
 }
 .weekday {
-  background: linear-gradient(to right, #529e52, #7acc7a);
+  background: linear-gradient(to right, #427a42, #63a663);
 }
 .prominent-name {
-  background: linear-gradient(to right, #3a6fd4, #6ea8f8);
+  background: linear-gradient(to right, #355eb5, #5f8de3);
 }
 
 .info {
@@ -176,16 +175,16 @@ body {
 }
 .label {
   font-size: 0.8rem;
-  color: #375a91;
+  color: #2c436e;
   font-weight: 600;
   margin-bottom: 2px;
 }
 .value {
-  font-size: 0.92rem;
-  font-weight: 600;
-  background: #f3f6fc;
+  font-size: 0.94rem;
+  font-weight: 700;
+  background: #ecf0f8;
   padding: 6px 10px;
-  border: 1px solid #a9bad3;
+  border: 2px solid #889ab5;
   border-radius: 6px;
   display: inline-block;
   min-width: 40px;
