@@ -262,9 +262,10 @@ if uploaded_file:
             export_rows.append({"Fahrer": fahrer_name, "Einsätze": " | ".join(wochen_eintraege)})
 
             html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
-            name_html = fahrer_name.split(",")[0].replace(" ", "_")
+            name_html = fahrer_name.replace(", ", "_").replace(" ", "_")
             filename = f"KW{kw:02d}_{name_html}.html"
             html_files[filename] = html_code
+
 
         export_df = pd.DataFrame(export_rows)
         csv = export_df.to_csv(index=False, encoding="utf-8-sig")
