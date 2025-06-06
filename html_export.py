@@ -35,23 +35,23 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
 </div>"""
 
 
-    for eintrag in eintraege:
-        date_text, content = eintrag.split(": ", 1)
-        date_obj = pd.to_datetime(date_text.split(" ")[0], format="%d.%m.%Y")
-        weekday = date_text.split("(")[-1].replace(")", "")
+   for eintrag in eintraege:
+    date_text, content = eintrag.split(": ", 1)
+    date_obj = pd.to_datetime(date_text.split(" ")[0], format="%d.%m.%Y")
+    weekday = date_text.split("(")[-1].replace(")", "")
 
-        if "–" in content:
-            uhrzeit, tour = [x.strip() for x in content.split("–", 1)]
-        else:
-            uhrzeit, tour = "–", content.strip()
+    if "–" in content:
+        uhrzeit, tour = [x.strip() for x in content.split("–", 1)]
+    else:
+        uhrzeit, tour = "–", content.strip()
 
-        card_class = "daycard"
-        if weekday == "Samstag":
-            card_class += " samstag"
-        elif weekday == "Sonntag":
-            card_class += " sonntag"
+    card_class = "daycard"
+    if weekday == "Samstag":
+        card_class += " samstag"
+    elif weekday == "Sonntag":
+        card_class += " sonntag"
 
-        html += f"""
+    html += f"""
 <div class=\"{card_class}\">
   <div class=\"header-row\">
     <div class=\"prominent-date\">{date_obj.strftime('%d.%m.%Y')}</div>
@@ -68,7 +68,8 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
       <div class=\"value\">{uhrzeit}</div>
     </div>
   </div>
-</div>"
+</div>"""  # <-- korrekt abgeschlossen
+
 
     html += "</div></div></body></html>"
     return html
