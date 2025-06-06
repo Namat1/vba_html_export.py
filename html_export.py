@@ -32,7 +32,8 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     <div class=\"headline-kw\">KW {kw}</div>
     <div class=\"headline-period\">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
   </div>
-</div>"
+</div>"""
+
 
     for eintrag in eintraege:
         date_text, content = eintrag.split(": ", 1)
