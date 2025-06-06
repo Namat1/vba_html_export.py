@@ -74,8 +74,18 @@ if uploaded_file:
                         fahrer_dict[fahrer_key][datum_dt.date()] = []
                     fahrer_dict[fahrer_key][datum_dt.date()].append(eintrag_text)
 
+        # Fahrer zusammenführen, KW-bereinigt
+        export_dict = {}
+        for fahrer_kw, eintraege in fahrer_dict.items():
+            if fahrer_kw not in export_dict:
+                export_dict[fahrer_kw] = {}
+            for tag, liste in eintraege.items():
+                if tag not in export_dict[fahrer_kw]:
+                    export_dict[fahrer_kw][tag] = []
+                export_dict[fahrer_kw][tag].extend(liste)
+
         export_rows = []
-        for fahrer, eintraege in fahrer_dict.items():
+        for fahrer, eintraege in export_dict.items():
             alle_daten = list(eintraege.keys())
             if not alle_daten:
                 continue
