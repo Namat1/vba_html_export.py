@@ -4,15 +4,15 @@ from io import BytesIO
 from datetime import datetime
 import calendar
 
-# Deutsche Wochentage mit Sonntag als Wochenstart
-wochentage_deutsch = {
-    6: "Sonntag",
-    0: "Montag",
-    1: "Dienstag",
-    2: "Mittwoch",
-    3: "Donnerstag",
-    4: "Freitag",
-    5: "Samstag"
+# Deutsche Übersetzung für strftime
+wochentage_deutsch_map = {
+    "Monday": "Montag",
+    "Tuesday": "Dienstag",
+    "Wednesday": "Mittwoch",
+    "Thursday": "Donnerstag",
+    "Friday": "Freitag",
+    "Saturday": "Samstag",
+    "Sunday": "Sonntag"
 }
 
 # Kalenderwoche berechnen
@@ -45,8 +45,8 @@ if uploaded_file:
                 continue
 
             kw = get_kw(datum_dt)
-            wochentag_idx = datum_dt.weekday()
-            wochentag = wochentage_deutsch.get(wochentag_idx, datum_dt.strftime("%A"))
+            wochentag_en = datum_dt.strftime("%A")
+            wochentag = wochentage_deutsch_map.get(wochentag_en, wochentag_en)
 
             if pd.isna(uhrzeit):
                 uhrzeit_str = "–"
@@ -79,7 +79,6 @@ if uploaded_file:
 
         export_rows = []
         for fahrer, eintraege in fahrer_dict.items():
-            # Startdatum: Sonntag der Woche
             alle_daten = list(eintraege.keys())
             if not alle_daten:
                 continue
@@ -88,13 +87,13 @@ if uploaded_file:
             eintragsliste = []
             for i in range(7):
                 tag_datum = start_sonntag + pd.Timedelta(days=i)
-                wtag_idx = (tag_datum.weekday() + 1) % 7
-                wtag = wochentage_deutsch[wtag_idx]
+                wochentag_en = tag_datum.strftime("%A")
+                wochentag = wochentage_deutsch_map.get(wochentag_en, wochentag_en)
                 if tag_datum in eintraege:
                     e = eintraege[tag_datum]
                     eintragsliste.append(f"{e['datum']} ({e['wochentag']}): {e['uhrzeit']} – {e['tour']}")
                 else:
-                    eintragsliste.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wtag}): –")
+                    eintragsliste.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
 
             export_rows.append({
                 "Fahrer": fahrer,
