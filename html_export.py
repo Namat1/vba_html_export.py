@@ -18,21 +18,21 @@ def get_kw(datum):
 # HTML-Template generieren
 def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     html = f"""<!DOCTYPE html>
-<html lang="de">
+<html lang=\"de\">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset=\"UTF-8\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
   <title>KW{kw} – {fahrer_name}</title>
   <style>{css_styles}</style>
 </head>
 <body>
-<div class="container-outer"><div class="container">
-<div class="headline-block">
-  <div class="headline-kw-box">
-    <div class="headline-kw">KW {kw}</div>
-    <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+<div class=\"container-outer\"><div class=\"container\">
+<div class=\"headline-block\">
+  <div class=\"headline-kw-box\">
+    <div class=\"headline-kw\">KW {kw}</div>
+    <div class=\"headline-period\">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
   </div>
-</div>"""
+</div>"
 
     for eintrag in eintraege:
         date_text, content = eintrag.split(": ", 1)
@@ -51,28 +51,28 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
             card_class += " sonntag"
 
         html += f"""
-<div class="{card_class}">
-  <div class="header-row">
-    <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
-    <div class="weekday">{weekday}</div>
-    <div class="prominent-name">{fahrer_name}</div>
+<div class=\"{card_class}\">
+  <div class=\"header-row\">
+    <div class=\"prominent-date\">{date_obj.strftime('%d.%m.%Y')}</div>
+    <div class=\"weekday\">{weekday}</div>
+    <div class=\"prominent-name\">{fahrer_name}</div>
   </div>
-  <div class="info">
-    <div class="info-block">
-      <div class="label">Tour:</div>
-      <div class="value">{tour}</div>
+  <div class=\"info\">
+    <div class=\"info-block\">
+      <div class=\"label\">Tour:</div>
+      <div class=\"value\">{tour}</div>
     </div>
-    <div class="info-block">
-      <div class="label">Uhrzeit:</div>
-      <div class="value">{uhrzeit}</div>
+    <div class=\"info-block\">
+      <div class=\"label\">Uhrzeit:</div>
+      <div class=\"value\">{uhrzeit}</div>
     </div>
   </div>
-</div>"""
+</div>"
 
     html += "</div></div></body></html>"
     return html
 
-# Stildefinition (dein zuletzt gepostetes CSS)
+# CSS ausgelagert
 css_styles = """body { font-family: 'Inter', Arial, sans-serif; background: #e3e7ee; margin: 0; padding: 0; color: #1c1c1c; font-size: 15px; }
 .container-outer { max-width: 460px; margin: 28px auto; background: #f9fafc; border-radius: 16px; border: 3px solid #5c6f8c; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); padding: 20px 16px; }
 .headline-block { display: flex; justify-content: center; margin-bottom: 20px; }
@@ -92,7 +92,7 @@ css_styles = """body { font-family: 'Inter', Arial, sans-serif; background: #e3e
 .label { font-size: 0.8rem; color: #2c436e; font-weight: 600; margin-bottom: 2px; }
 .value { font-size: 0.94rem; font-weight: 700; background: #ecf0f8; padding: 6px 10px; border: 2px solid #889ab5; border-radius: 6px; display: inline-block; min-width: 40px; }
 @media (max-width: 480px) { .prominent-date, .weekday, .prominent-name, .info-block { flex: 1 1 100%; } }"""
-"""  # Oder so wie du es schon oben integriert hast
+
 
 # Streamlit UI
 st.set_page_config(page_title="Touren-Export", layout="centered")
@@ -106,9 +106,9 @@ if uploaded_file:
 
         fahrer_dict = {}
         for _, row in df.iterrows():
-            datum = row.iloc[14]  # Spalte O
-            tour = row.iloc[15]   # Spalte P
-            uhrzeit = row.iloc[8] # Spalte I
+            datum = row.iloc[14]
+            tour = row.iloc[15]
+            uhrzeit = row.iloc[8]
             if pd.isna(datum): continue
             try: datum_dt = pd.to_datetime(datum)
             except: continue
