@@ -40,28 +40,129 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
 
 # CSS-Stile
 css_styles = """
-body {font-family: 'Inter', Arial, sans-serif; background: #f5f8fb; margin: 0; color: #23262f; min-height: 100vh; font-size: 14px;}
-.container-outer {max-width: 430px; width: 94vw; margin: 16px auto; background: linear-gradient(112deg, #eaf1ff 0%, #f9fafd 100%);
-  border-radius: 16px; box-shadow: 0 4px 19px rgba(40,60,130,0.14); padding: 10px 4px 12px 4px; border: 2px solid #a9bcdf;}
-.container {max-width: 390px; margin: 0 auto; padding: 0;}
-.headline-block {display: flex; flex-direction: column; align-items: center; margin-bottom: 0.8em;}
-.headline-kw {font-size: 1.5rem; font-weight: 900; background: linear-gradient(92deg,#2464e4 25%,#63b3ff 100%);
-  color: #fff; border-radius: 10px; padding: 0.2em 0.9em; border: 2px solid #2564e4; text-shadow: 0 1px 3px black;}
-.headline-period {font-size: 0.78rem; color: #2564e4; background: #eaf2fe; border-radius: 14px; font-weight: 700;
-  padding: 0.25em 0.9em; border: 1px solid #2564e4; margin-top: 0.2em;}
-.daycard {background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(60,80,160,0.1); margin-bottom: 6px;
-  padding: 10px 6px; border: 1.5px solid #2564e4;}
-.header-row {display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-bottom: 6px;}
-.prominent-name, .prominent-date, .weekday {
-  flex: 1 1 0; text-align: center; font-size: 0.95rem; font-weight: 800; color: #f0f4ff;
-  padding: 3px 10px; border-radius: 6px; text-shadow: 0 1px 2px black;}
-.prominent-name {background: linear-gradient(90deg,#2564e4 40%,#4aa8ff 100%); border: 1px solid #2564e4;}
-.prominent-date {background: linear-gradient(90deg,#e03244,#fc8282); border: 1px solid #fc1d1d;}
-.weekday {background: linear-gradient(90deg,#3abc3a,#a4ffb5); border: 1px solid #218a16;}
-.label {font-size: 0.8rem; color: #2564e4; font-weight: 700;}
-.value {font-weight: 800; font-size: 0.9rem; background: #f6faff; padding: 3px 6px; border: 1px solid #aac3e9;
-  border-radius: 4px; display: inline-block;}
+body {
+  font-family: 'Inter', Arial, sans-serif;
+  background: #f5f8fb;
+  margin: 0;
+  padding: 0;
+  color: #23262f;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.container-outer {
+  max-width: 480px;
+  margin: 18px auto;
+  padding: 8px;
+  background: linear-gradient(112deg, #eaf1ff 0%, #f9fafd 100%);
+  border-radius: 18px;
+  border: 2px solid #a9bcdf;
+  box-shadow: 0 4px 20px rgba(40,60,130,0.12);
+}
+.container {
+  padding: 0 6px;
+}
+.headline-block {
+  text-align: center;
+  margin-bottom: 1em;
+}
+.headline-kw {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(92deg, #2564e4 25%, #63b3ff 100%);
+  padding: 6px 20px;
+  border-radius: 12px;
+  display: inline-block;
+  border: 2px solid #1c4ecb;
+  text-shadow: 0 1px 2px #000;
+}
+.headline-period {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: #eaf2fe;
+  color: #2564e4;
+  padding: 4px 12px;
+  border-radius: 14px;
+  border: 1px solid #2564e4;
+  display: inline-block;
+}
+.daycard {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1.5px solid #2564e4;
+  padding: 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+}
+.header-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.prominent-date,
+.weekday,
+.prominent-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  flex: 1 1 30%;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 0 1px 1px #000;
+}
+.prominent-date {
+  background: linear-gradient(90deg, #e03244, #fc8282);
+  border: 1px solid #fc1d1d;
+}
+.weekday {
+  background: linear-gradient(90deg, #3abc3a, #a4ffb5);
+  border: 1px solid #218a16;
+}
+.prominent-name {
+  background: linear-gradient(90deg, #2564e4, #4aa8ff);
+  border: 1px solid #2564e4;
+}
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.label {
+  font-size: 0.82rem;
+  color: #2564e4;
+  font-weight: 600;
+}
+.value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: #f6faff;
+  padding: 5px 8px;
+  border: 1px solid #aac3e9;
+  border-radius: 6px;
+  display: inline-block;
+  min-width: 40px;
+}
+@media (max-width: 480px) {
+  .prominent-date,
+  .weekday,
+  .prominent-name {
+    font-size: 0.85rem;
+    flex: 1 1 100%;
+  }
+  .container-outer {
+    margin: 12px auto;
+    padding: 6px;
+    border-radius: 12px;
+  }
+}
 """
+
 
 # Streamlit UI
 st.set_page_config(page_title="Touren-Export", layout="centered")
