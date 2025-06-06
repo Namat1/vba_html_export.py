@@ -1,57 +1,83 @@
 import streamlit as st
-from datetime import datetime
 from io import BytesIO
-import pandas as pd
-import zipfile
-from openpyxl import load_workbook
 from pathlib import Path
+from datetime import datetime, timedelta
+import zipfile
 import tempfile
+import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.utils.datetime import from_excel
 
-# Funktion: Kalenderwoche
+# Kalenderwoche berechnen
 def get_calendar_week(date):
     return date.isocalendar()[1]
 
-# Funktion: sichere Dateinamen
+# Dateinamen säubern
 def clean_filename(name):
     return "".join(c for c in name if c.isalnum() or c in "._- ").strip().replace(" ", "_")
 
-# HTML-Exportfunktion
-def create_html_content(name, kw):
-    return f"""<!DOCTYPE html>
+# HTML-Inhalt erzeugen (VBA-nachbau)
+def create_html_from_row(ws, row_idx, base_date, kw, fahrer_name):
+    tage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
+    html = f"""<!DOCTYPE html>
 <html lang='de'>
 <head>
   <meta charset='UTF-8'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-  <title>KW{kw} – {name}</title>
-  <link href='https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap' rel='stylesheet'>
+  <title>KW{kw} – {fahrer_name}</title>
   <style>
-    body {{
-      font-family: 'Inter', Arial, sans-serif;
-      background: #f5f8fb;
-      margin: 0;
-      color: #23262f;
-      min-height: 100vh;
-    }}
-    .container-outer {{
-      max-width: 540px;
-      margin: 26px auto 36px auto;
-      background: linear-gradient(112deg, #eaf1ff 0%, #f9fafd 100%);
-      border-radius: 28px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-      padding: 20px;
+    body{{font-family:Arial,sans-serif;margin:20px;}}
+    h1,h2{{text-align:center;}}
+    table{{width:100%;border-collapse:collapse;margin-top:20px;}}
+    th,td{{border:1px solid #ddd;padding:8px;text-align:center;}}
+    th{{background-color:#f4f4f4;}}
+    @media(max-width:600px){{
+      table,thead,tbody,th,td,tr{{display:block;}}
+      th{{display:none;}}
+      td{{border:none;border-bottom:1px solid #eee;position:relative;padding-left:50%;}}
+      td:before{{position:absolute;top:8px;left:8px;width:45%;white-space:nowrap;font-weight:bold;}}
     }}
   </style>
 </head>
 <body>
-  <div class="container-outer">
-    <h1>KW{kw} – {name}</h1>
-    <p>Hier steht dein Plan.</p>
-  </div>
-</body>
-</html>"""
+  <h1>KW{kw}</h1>
+  <h2>{fahrer_name} – Schichtbeginn: {base_date.strftime('%d.%m.%Y')} bis {(base_date + timedelta(days=6)).strftime('%d.%m.%Y')}</h2>
+  <table><thead><tr><th>Datum</th><th>Wochentag</th><th>Uhrzeit</th><th>Tour / Aufgabe</th></tr></thead><tbody>"""
 
-# Hauptverarbeitung
-def process_excel_to_zip(excel_bytes):
+    for j in range(7):
+        einsatz_count = 0
+        for k in range(2):
+            uhrzeit_col = 5 + j * 2 + k
+            tour = ws.cell(row=row_idx + 1, column=uhrzeit_col + 1).value
+            uhrzeit = ws.cell(row=row_idx, column=uhrzeit_col + 1).value
+
+            if tour not in (None, "", "0"):
+                if isinstance(uhrzeit, (int, float)):
+                    if uhrzeit in [0, 1]:
+                        uhrzeit_str = "00:00"
+                    elif 0 < uhrzeit < 1:
+                        t = from_excel(uhrzeit)
+                        uhrzeit_str = t.strftime("%H:%M")
+                    else:
+                        uhrzeit_str = str(uhrzeit)
+                elif isinstance(uhrzeit, datetime):
+                    uhrzeit_str = uhrzeit.strftime("%H:%M")
+                elif uhrzeit in ["0:00", "00:00", "0.0", "1", "1.0", ""]:
+                    uhrzeit_str = "00:00"
+                else:
+                    uhrzeit_str = str(uhrzeit)
+
+                html += f"<tr><td>{(base_date + timedelta(days=j)).strftime('%d.%m.%Y')}</td><td>{tage[j]}</td><td>{uhrzeit_str}</td><td>{tour}</td></tr>\n"
+                einsatz_count += 1
+
+        if einsatz_count == 0:
+            html += f"<tr><td>{(base_date + timedelta(days=j)).strftime('%d.%m.%Y')}</td><td>{tage[j]}</td><td></td><td></td></tr>\n"
+
+    html += "</tbody></table></body></html>"
+    return html
+
+# Hauptfunktion mit Verarbeitung
+def process_excel_with_real_data(excel_bytes):
     in_memory_zip = BytesIO()
     with tempfile.TemporaryDirectory() as tmpdirname:
         wb = load_workbook(filename=BytesIO(excel_bytes), data_only=True)
@@ -64,19 +90,24 @@ def process_excel_to_zip(excel_bytes):
         kw = get_calendar_week(datum)
         name_dict = {}
 
-        for i in range(11, ws.max_row + 1):
-            name_cell = ws[f"B{i}"].value
-            if name_cell:
-                base_name = name_cell.strip()
+        i = 11
+        while i <= ws.max_row:
+            fahrer_name = ws[f"B{i}"].value
+            if fahrer_name:
+                base_name = fahrer_name.strip()
                 count = name_dict.get(base_name, 0)
                 name_dict[base_name] = count + 1
                 final_name = base_name if count == 0 else f"{base_name}_{count}"
                 safe_name = clean_filename(final_name)
-                html = create_html_content(final_name, kw)
 
+                html = create_html_from_row(ws, i, datum, kw, final_name)
                 html_path = Path(tmpdirname) / f"KW{kw}_{safe_name}.html"
                 with open(html_path, "w", encoding="utf-8") as f:
                     f.write(html)
+
+                i += 2
+            else:
+                i += 1
 
         with zipfile.ZipFile(in_memory_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
             for html_file in Path(tmpdirname).glob("*.html"):
@@ -85,16 +116,19 @@ def process_excel_to_zip(excel_bytes):
     in_memory_zip.seek(0)
     return in_memory_zip
 
-# Streamlit Interface
-st.title("Excel zu HTML Exporter (wie VBA)")
-uploaded_file = st.file_uploader("Excel-Datei mit 'Druck Fahrer' hochladen", type=["xlsx", "xlsm"])
+# Streamlit UI
+st.title("Fahrerwochenplaner (Excel → HTML)")
+uploaded_file = st.file_uploader("Excel-Datei hochladen (mit Blatt 'Druck Fahrer')", type=["xlsx", "xlsm"])
 
 if uploaded_file:
-    zip_bytes = process_excel_to_zip(uploaded_file.read())
-    st.success("Export erfolgreich.")
-    st.download_button(
-        label="ZIP-Datei herunterladen",
-        data=zip_bytes,
-        file_name="html_export.zip",
-        mime="application/zip"
-    )
+    try:
+        zip_bytes = process_excel_with_real_data(uploaded_file.read())
+        st.success("Export erfolgreich! ✅")
+        st.download_button(
+            label="ZIP-Datei herunterladen",
+            data=zip_bytes,
+            file_name="html_export.zip",
+            mime="application/zip"
+        )
+    except Exception as e:
+        st.error(f"Fehler beim Verarbeiten der Datei: {e}")
