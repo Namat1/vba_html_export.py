@@ -249,7 +249,7 @@ if uploaded_file:
             if not eintraege: continue
             start_datum = min(eintraege.keys())
             start_sonntag = start_datum - pd.Timedelta(days=(start_datum.weekday() + 1) % 7)
-            kw = get_kw(start_sonntag)
+            kw = get_kw(start_sonntag) + 1
             wochen_eintraege = []
             for i in range(7):
                 tag_datum = start_sonntag + pd.Timedelta(days=i)
