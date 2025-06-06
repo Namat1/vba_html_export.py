@@ -8,16 +8,13 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.utils.datetime import from_excel
 
-# Kalenderwoche berechnen
 def get_calendar_week(date):
     return date.isocalendar()[1]
 
-# Dateinamen säubern
 def clean_filename(name):
     return "".join(c for c in name if c.isalnum() or c in "._- ").strip().replace(" ", "_")
 
-# HTML für Fahrerzeile erzeugen (2 Touren pro Tag = 2 Zeilen mit Datum/Wochentag)
-def create_html_from_row_full_repeat(ws, row_idx, base_date, kw, fahrer_name):
+def create_html_from_row_final(ws, row_idx, base_date, kw, fahrer_name):
     tage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
     html = f"""<!DOCTYPE html>
 <html lang='de'>
@@ -44,34 +41,37 @@ def create_html_from_row_full_repeat(ws, row_idx, base_date, kw, fahrer_name):
   <h2>{fahrer_name} – Schichtbeginn: {base_date.strftime('%d.%m.%Y')} bis {(base_date + timedelta(days=6)).strftime('%d.%m.%Y')}</h2>
   <table><thead><tr><th>Datum</th><th>Wochentag</th><th>Uhrzeit</th><th>Tour / Aufgabe</th></tr></thead><tbody>"""
 
-    for j in range(7):
+    for j in range(1, 8):
         einsatz_count = 0
-        tag_datum = base_date + timedelta(days=j)
-        wochentag = tage[j]
+        tag_datum = base_date + timedelta(days=j - 1)
+        wochentag = tage[j - 1]
 
-        for k in range(2):  # max. 2 Einträge pro Tag
-            uhrzeit_col = 5 + j * 2 + k
-            tour = ws.cell(row=row_idx + 1, column=uhrzeit_col + 1).value
-            uhrzeit = ws.cell(row=row_idx, column=uhrzeit_col + 1).value
+        for k in range(2):
+            col_idx = 5 + (j - 1) * 2 + k
+            uhrzeit = ws.cell(row=row_idx, column=col_idx + 1).value
+            tourtext = ws.cell(row=row_idx + 1, column=col_idx + 1).value
 
-            if str(tour).strip() not in ("", "0", "None"):
-                if isinstance(uhrzeit, (int, float)):
-                    if uhrzeit in [0, 1]:
-                        uhrzeit_str = "00:00"
-                    elif 0 < uhrzeit < 1:
-                        t = from_excel(uhrzeit)
-                        uhrzeit_str = t.strftime("%H:%M")
-                    else:
-                        uhrzeit_str = str(uhrzeit)
-                elif isinstance(uhrzeit, datetime):
-                    uhrzeit_str = uhrzeit.strftime("%H:%M")
-                elif str(uhrzeit).strip() in ["", "0", "0.0", "1", "1.0", "00:00"]:
+            if tourtext is None or str(tourtext).strip() in ("", "0", "None"):
+                continue
+
+            if isinstance(uhrzeit, (int, float)):
+                if uhrzeit in [0, 1]:
                     uhrzeit_str = "00:00"
+                elif 0 < uhrzeit < 1:
+                    t = from_excel(uhrzeit)
+                    uhrzeit_str = t.strftime("%H:%M")
                 else:
                     uhrzeit_str = str(uhrzeit)
+            elif isinstance(uhrzeit, datetime):
+                uhrzeit_str = uhrzeit.strftime("%H:%M")
+            elif str(uhrzeit).strip() in ["", "0", "0.0", "1", "1.0", "00:00"]:
+                uhrzeit_str = "00:00"
+            else:
+                uhrzeit_str = str(uhrzeit)
 
-                html += f"<tr><td>{tag_datum.strftime('%d.%m.%Y')}</td><td>{wochentag}</td><td>{uhrzeit_str}</td><td>{tour}</td></tr>\n"
-                einsatz_count += 1
+            tour_str = str(tourtext).strip()
+            html += f"<tr><td>{tag_datum.strftime('%d.%m.%Y')}</td><td>{wochentag}</td><td>{uhrzeit_str}</td><td>{tour_str}</td></tr>\n"
+            einsatz_count += 1
 
         if einsatz_count == 0:
             html += f"<tr><td>{tag_datum.strftime('%d.%m.%Y')}</td><td>{wochentag}</td><td></td><td></td></tr>\n"
@@ -79,8 +79,7 @@ def create_html_from_row_full_repeat(ws, row_idx, base_date, kw, fahrer_name):
     html += "</tbody></table></body></html>"
     return html
 
-# Hauptverarbeitung: HTML-Dateien erzeugen und zippen
-def process_excel_full_repeat(excel_bytes):
+def process_excel_final_output(excel_bytes):
     in_memory_zip = BytesIO()
     with tempfile.TemporaryDirectory() as tmpdirname:
         wb = load_workbook(filename=BytesIO(excel_bytes), data_only=True)
@@ -103,7 +102,7 @@ def process_excel_full_repeat(excel_bytes):
                 final_name = base_name if count == 0 else f"{base_name}_{count}"
                 safe_name = clean_filename(final_name)
 
-                html = create_html_from_row_full_repeat(ws, i, datum, kw, final_name)
+                html = create_html_from_row_final(ws, i, datum, kw, final_name)
                 html_path = Path(tmpdirname) / f"KW{kw}_{safe_name}.html"
                 with open(html_path, "w", encoding="utf-8") as f:
                     f.write(html)
@@ -119,14 +118,15 @@ def process_excel_full_repeat(excel_bytes):
     in_memory_zip.seek(0)
     return in_memory_zip
 
-# Streamlit App-UI
-st.title("Fahrer-Wochenplaner (Excel zu HTML)")
+# Streamlit App
+st.set_page_config(page_title="HTML Planer", layout="centered")
+st.title("Fahrer-Wochenplaner (Excel → HTML)")
 
-uploaded_file = st.file_uploader("Excel-Datei hochladen (Blatt: 'Druck Fahrer')", type=["xlsx", "xlsm"])
+uploaded_file = st.file_uploader("Excel-Datei mit dem Blatt 'Druck Fahrer' hochladen", type=["xlsx", "xlsm"])
 
 if uploaded_file:
     try:
-        zip_bytes = process_excel_full_repeat(uploaded_file.read())
+        zip_bytes = process_excel_final_output(uploaded_file.read())
         st.success("Export erfolgreich!")
         st.download_button(
             label="ZIP-Datei herunterladen",
