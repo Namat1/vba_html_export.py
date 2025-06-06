@@ -25,7 +25,7 @@ if uploaded_file:
             tour = row.iloc[15]   # Spalte P
             uhrzeit = row.iloc[8] # Spalte I
 
-            if pd.isna(datum) or pd.isna(tour):
+            if pd.isna(datum):
                 continue
 
             try:
@@ -36,7 +36,6 @@ if uploaded_file:
             kw = get_kw(datum_dt)
             wochentag = datum_dt.strftime("%A")
 
-            # Uhrzeit-Logik korrigiert
             if pd.isna(uhrzeit):
                 uhrzeit_str = "–"
             elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0:
@@ -52,14 +51,25 @@ if uploaded_file:
 
             eintrag = f"{datum_dt.strftime('%d.%m.%Y')} ({wochentag}): {uhrzeit_str} – {str(tour).strip()}"
 
-            # Beide Fahrer prüfen: D/E und G/H
             fahrer_infos = []
-            if pd.notna(row.iloc[3]) and pd.notna(row.iloc[4]):
-                fahrer_infos.append((row.iloc[3], row.iloc[4]))  # D/E
-            if pd.notna(row.iloc[6]) and pd.notna(row.iloc[7]):
-                fahrer_infos.append((row.iloc[6], row.iloc[7]))  # G/H
+
+            # Erster Fahrer (D/E)
+            if pd.notna(row.iloc[3]) or pd.notna(row.iloc[4]):
+                nachname1 = str(row.iloc[3]).strip().title() if pd.notna(row.iloc[3]) else ""
+                vorname1 = str(row.iloc[4]).strip().title() if pd.notna(row.iloc[4]) else ""
+                if nachname1 or vorname1:
+                    fahrer_infos.append((nachname1, vorname1))
+
+            # Zweiter Fahrer (G/H)
+            if pd.notna(row.iloc[6]) or pd.notna(row.iloc[7]):
+                nachname2 = str(row.iloc[6]).strip().title() if pd.notna(row.iloc[6]) else ""
+                vorname2 = str(row.iloc[7]).strip().title() if pd.notna(row.iloc[7]) else ""
+                if nachname2 or vorname2:
+                    fahrer_infos.append((nachname2, vorname2))
 
             for nachname, vorname in fahrer_infos:
+                if not nachname and not vorname:
+                    continue
                 fahrer_key = f"{nachname}, {vorname} | KW{kw}"
                 if fahrer_key not in fahrer_dict:
                     fahrer_dict[fahrer_key] = []
