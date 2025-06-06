@@ -20,21 +20,49 @@ def get_kw(datum):
 def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     html = f"""<!DOCTYPE html>
 <html lang="de">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KW{kw} – {fahrer_name}</title>
-<style>{css_styles}</style></head><body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KW{kw} – {fahrer_name}</title>
+  <style>{css_styles}</style>
+</head>
+<body>
 <div class="container-outer"><div class="container">
-<div class="headline-block"><div class="headline-kw">KW{kw}</div>
-<div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div></div>"""
+<div class="headline-block">
+  <div class="headline-kw">KW{kw}</div>
+  <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+</div>"""
+
     for eintrag in eintraege:
         date_text, content = eintrag.split(": ", 1)
         date_obj = pd.to_datetime(date_text.split(" ")[0], format="%d.%m.%Y")
         weekday = date_text.split("(")[-1].replace(")", "")
-        html += f"""<div class="daycard"><div class="header-row">
-<div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
-<div class="weekday">{weekday}</div>
-<div class="prominent-name">{fahrer_name}</div></div>
-<div class="info"><div class="label">Tour:</div><div class="value">{content}</div></div></div>"""
+
+        # Uhrzeit & Tour trennen
+        if "–" in content:
+            uhrzeit, tour = [x.strip() for x in content.split("–", 1)]
+        else:
+            uhrzeit, tour = "–", content.strip()
+
+        html += f"""
+<div class="daycard">
+  <div class="header-row">
+    <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
+    <div class="weekday">{weekday}</div>
+    <div class="prominent-name">{fahrer_name}</div>
+  </div>
+  <div class="info">
+    <div class="info-block">
+      <div class="label">Tour:</div>
+      <div class="value">{tour}</div>
+    </div>
+    <div class="info-block">
+      <div class="label">Uhrzeit:</div>
+      <div class="value">{uhrzeit}</div>
+    </div>
+  </div>
+</div>"""
+
     html += "</div></div></body></html>"
     return html
 
@@ -73,7 +101,6 @@ body {
   padding: 6px 18px;
   border-radius: 10px;
   display: inline-block;
-  border: none;
   text-shadow: 0 1px 1px rgba(0,0,0,0.2);
 }
 .headline-period {
@@ -127,13 +154,21 @@ body {
 }
 .info {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 8px;
+}
+.info-block {
+  flex: 1 1 48%;
+  display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 .label {
   font-size: 0.8rem;
   color: #3a5f94;
   font-weight: 600;
+  margin-bottom: 2px;
 }
 .value {
   font-size: 0.9rem;
@@ -142,7 +177,6 @@ body {
   padding: 5px 8px;
   border: 1px solid #c0cfe0;
   border-radius: 6px;
-  display: inline-block;
   min-width: 40px;
 }
 @media (max-width: 480px) {
@@ -152,14 +186,17 @@ body {
     font-size: 0.85rem;
     flex: 1 1 100%;
   }
+  .info-block {
+    flex: 1 1 100%;
+  }
   .container-outer {
     margin: 12px auto;
     padding: 6px;
     border-radius: 12px;
   }
 }
-
 """
+
 
 
 # Streamlit UI
