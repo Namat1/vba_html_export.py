@@ -74,7 +74,8 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     return html
 
 
-# CSS-Stile = """
+# CSS-Stile 
+css_styles = """
 body {
   font-family: 'Inter', Arial, sans-serif;
   background: #e3e7ee;
