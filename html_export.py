@@ -30,6 +30,7 @@ if uploaded_file:
         df = pd.read_excel(uploaded_file, sheet_name="Touren", skiprows=4, engine="openpyxl")
 
         fahrer_dict = {}
+        fahrer_kw_map = {}
 
         for idx, row in df.iterrows():
             datum = row.iloc[14]  # Spalte O
@@ -67,16 +68,16 @@ if uploaded_file:
                 nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
                 vorname = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
                 if nachname or vorname:
-                    fahrer_key = f"{nachname}, {vorname} | KW{kw}"
-                    if fahrer_key not in fahrer_dict:
-                        fahrer_dict[fahrer_key] = {}
-                    if datum_dt.date() not in fahrer_dict[fahrer_key]:
-                        fahrer_dict[fahrer_key][datum_dt.date()] = []
-                    if eintrag_text not in fahrer_dict[fahrer_key][datum_dt.date()]:
-                        fahrer_dict[fahrer_key][datum_dt.date()].append(eintrag_text)
+                    fahrer_name = f"{nachname}, {vorname}"
+                    if fahrer_name not in fahrer_dict:
+                        fahrer_dict[fahrer_name] = {}
+                    if datum_dt.date() not in fahrer_dict[fahrer_name]:
+                        fahrer_dict[fahrer_name][datum_dt.date()] = []
+                    if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
+                        fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
 
         export_rows = []
-        for fahrer_key, eintraege in fahrer_dict.items():
+        for fahrer_name, eintraege in fahrer_dict.items():
             if not eintraege:
                 continue
 
@@ -98,7 +99,7 @@ if uploaded_file:
                     wochen_eintraege.append(zeile)
 
             export_rows.append({
-                "Fahrer": fahrer_key,
+                "Fahrer": fahrer_name,
                 "Einsätze": " | ".join(wochen_eintraege)
             })
 
