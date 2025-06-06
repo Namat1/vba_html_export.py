@@ -44,8 +44,14 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         else:
             uhrzeit, tour = "–", content.strip()
 
+        card_class = "daycard"
+        if weekday == "Samstag":
+            card_class += " samstag"
+        elif weekday == "Sonntag":
+            card_class += " sonntag"
+
         html += f"""
-<div class="daycard">
+<div class="{card_class}">
   <div class="header-row">
     <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
     <div class="weekday">{weekday}</div>
@@ -65,6 +71,7 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
 
     html += "</div></div></body></html>"
     return html
+
 
 # CSS-Stile
 css_styles = """
@@ -183,6 +190,15 @@ body {
   .info-block {
     flex: 1 1 100%;
   }
+.daycard.samstag {
+  background: #fff7ef;
+  border-color: #f4be83;
+}
+.daycard.sonntag {
+  background: #fff0f0;
+  border-color: #ee8d8d;
+}
+
 }
 
 """
