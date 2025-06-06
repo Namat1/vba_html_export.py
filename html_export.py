@@ -26,14 +26,8 @@ if uploaded_file:
             uhrzeit = row.iloc[8] # Spalte I
 
             # Beide Namensvarianten prüfen
-            nachname = row.iloc[3] if pd.notna(row.iloc[3]) else ""
-            vorname = row.iloc[4] if pd.notna(row.iloc[4]) else ""
-            if not nachname and not vorname:
-                nachname = row.iloc[6] if pd.notna(row.iloc[6]) else ""
-                vorname = row.iloc[7] if pd.notna(row.iloc[7]) else ""
-
-            if not nachname or not vorname:
-                continue
+            nachname = row.iloc[3] if pd.notna(row.iloc[3]) else row.iloc[6]
+            vorname = row.iloc[4] if pd.notna(row.iloc[4]) else row.iloc[7]
 
             if pd.isna(datum) or pd.isna(tour):
                 continue
