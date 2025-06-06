@@ -37,10 +37,24 @@ if uploaded_file:
                 continue
 
             kw = get_kw(datum_dt)
-            wochentag = datum_dt.strftime("%A")  # Lokalisierter Wochentag
+            wochentag = datum_dt.strftime("%A")
+
+            # Uhrzeit-Logik korrigiert
+            if pd.isna(uhrzeit):
+                uhrzeit_str = "–"
+            elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0:
+                uhrzeit_str = "00:00"
+            elif isinstance(uhrzeit, datetime):
+                uhrzeit_str = uhrzeit.strftime("%H:%M")
+            else:
+                try:
+                    uhrzeit_parsed = pd.to_datetime(uhrzeit)
+                    uhrzeit_str = uhrzeit_parsed.strftime("%H:%M")
+                except:
+                    uhrzeit_str = str(uhrzeit).strip()
 
             fahrer_key = f"{nachname}, {vorname} | KW{kw}"
-            eintrag = f"{datum_dt.strftime('%d.%m.%Y')} ({wochentag}): {str(uhrzeit).strip()} – {str(tour).strip()}"
+            eintrag = f"{datum_dt.strftime('%d.%m.%Y')} ({wochentag}): {uhrzeit_str} – {str(tour).strip()}"
 
             if fahrer_key not in fahrer_dict:
                 fahrer_dict[fahrer_key] = []
