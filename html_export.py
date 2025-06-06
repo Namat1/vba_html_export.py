@@ -12,12 +12,12 @@ from openpyxl.utils.datetime import from_excel
 def get_calendar_week(date):
     return date.isocalendar()[1]
 
-# Dateinamen säubern
+# Dateinamen bereinigen
 def clean_filename(name):
     return "".join(c for c in name if c.isalnum() or c in "._- ").strip().replace(" ", "_")
 
-# HTML-Inhalt erzeugen (VBA-nachbau)
-def create_html_from_row(ws, row_idx, base_date, kw, fahrer_name):
+# HTML-Inhalt pro Fahrerzeile erzeugen
+def create_html_from_row_cleaned(ws, row_idx, base_date, kw, fahrer_name):
     tage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
     html = f"""<!DOCTYPE html>
 <html lang='de'>
@@ -51,7 +51,7 @@ def create_html_from_row(ws, row_idx, base_date, kw, fahrer_name):
             tour = ws.cell(row=row_idx + 1, column=uhrzeit_col + 1).value
             uhrzeit = ws.cell(row=row_idx, column=uhrzeit_col + 1).value
 
-            if tour not in (None, "", "0"):
+            if str(tour).strip() not in ("", "0", "None"):
                 if isinstance(uhrzeit, (int, float)):
                     if uhrzeit in [0, 1]:
                         uhrzeit_str = "00:00"
@@ -62,7 +62,7 @@ def create_html_from_row(ws, row_idx, base_date, kw, fahrer_name):
                         uhrzeit_str = str(uhrzeit)
                 elif isinstance(uhrzeit, datetime):
                     uhrzeit_str = uhrzeit.strftime("%H:%M")
-                elif uhrzeit in ["0:00", "00:00", "0.0", "1", "1.0", ""]:
+                elif str(uhrzeit).strip() in ["", "0", "0.0", "1", "1.0", "00:00"]:
                     uhrzeit_str = "00:00"
                 else:
                     uhrzeit_str = str(uhrzeit)
@@ -76,8 +76,8 @@ def create_html_from_row(ws, row_idx, base_date, kw, fahrer_name):
     html += "</tbody></table></body></html>"
     return html
 
-# Hauptfunktion mit Verarbeitung
-def process_excel_with_real_data(excel_bytes):
+# Hauptverarbeitung: alle HTMLs erzeugen und zippen
+def process_excel_cleaned_output(excel_bytes):
     in_memory_zip = BytesIO()
     with tempfile.TemporaryDirectory() as tmpdirname:
         wb = load_workbook(filename=BytesIO(excel_bytes), data_only=True)
@@ -100,7 +100,7 @@ def process_excel_with_real_data(excel_bytes):
                 final_name = base_name if count == 0 else f"{base_name}_{count}"
                 safe_name = clean_filename(final_name)
 
-                html = create_html_from_row(ws, i, datum, kw, final_name)
+                html = create_html_from_row_cleaned(ws, i, datum, kw, final_name)
                 html_path = Path(tmpdirname) / f"KW{kw}_{safe_name}.html"
                 with open(html_path, "w", encoding="utf-8") as f:
                     f.write(html)
@@ -118,11 +118,12 @@ def process_excel_with_real_data(excel_bytes):
 
 # Streamlit UI
 st.title("Fahrerwochenplaner (Excel → HTML)")
+
 uploaded_file = st.file_uploader("Excel-Datei hochladen (mit Blatt 'Druck Fahrer')", type=["xlsx", "xlsm"])
 
 if uploaded_file:
     try:
-        zip_bytes = process_excel_with_real_data(uploaded_file.read())
+        zip_bytes = process_excel_cleaned_output(uploaded_file.read())
         st.success("Export erfolgreich! ✅")
         st.download_button(
             label="ZIP-Datei herunterladen",
