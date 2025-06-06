@@ -83,6 +83,7 @@ if uploaded_file:
 
             start_datum = min(eintraege.keys())
             start_sonntag = start_datum - pd.Timedelta(days=(start_datum.weekday() + 1) % 7)
+            kw = get_kw(start_sonntag)
 
             wochen_eintraege = []
             for i in range(7):
@@ -100,6 +101,7 @@ if uploaded_file:
 
             export_rows.append({
                 "Fahrer": fahrer_name,
+                "Kalenderwoche": f"KW{kw}",
                 "Einsätze": " | ".join(wochen_eintraege)
             })
 
