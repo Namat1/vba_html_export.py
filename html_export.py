@@ -120,16 +120,17 @@ body {
 }
 
 .daycard.samstag {
-  background: #fff5e5;
-  border-color: #e9a23b;
-  box-shadow: 0 0 0 3px #ffdca1 inset;
+  background: #fff3c4;
+  border-color: #e09b00;
+  box-shadow: inset 0 0 0 4px #ffd566, 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
 .daycard.sonntag {
-  background: #ffeaea;
-  border-color: #d45656;
-  box-shadow: 0 0 0 3px #ffbbbb inset;
+  background: #ffd6d6;
+  border-color: #c63a3a;
+  box-shadow: inset 0 0 0 4px #ff9d9d, 0 3px 8px rgba(0, 0, 0, 0.1);
 }
+
 
 .daycard-header {
   display: flex;
