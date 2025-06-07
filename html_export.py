@@ -85,83 +85,81 @@ body {
   background: #f5f7fa;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   color: #1d1d1f;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .container-outer {
   max-width: 500px;
-  margin: 28px auto;
-  padding: 0 16px;
+  margin: 20px auto;
+  padding: 0 12px;
 }
 
 .headline-block {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .headline-kw-box {
   background: #eef2f9;
-  border-radius: 16px;
-  padding: 12px 18px;
+  border-radius: 12px;
+  padding: 8px 14px;
   border: 2px solid #a8b4cc;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .headline-kw {
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #1b3a7a;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .headline-period {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   color: #3e567f;
 }
 
 .headline-name {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: #1a3662;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .daycard {
   background: #ffffff;
-  border-radius: 14px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  border: 2px solid #b4bcc9;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border: 1.5px solid #b4bcc9;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
   transition: box-shadow 0.2s;
 }
 
 .daycard:hover {
-  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
 }
 
-/* Samstag & Sonntag */
 .daycard.samstag,
 .daycard.sonntag {
   background: #fff3cc;
-  border: 2px solid #e5aa00;
-  box-shadow: inset 0 0 0 4px #ffd566, 0 4px 10px rgba(0, 0, 0, 0.08);
-  border-radius: 14px;
+  border: 1.5px solid #e5aa00;
+  box-shadow: inset 0 0 0 3px #ffd566, 0 3px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
   overflow: hidden;
 }
 
 .daycard.samstag .header-row,
 .daycard.sonntag .header-row {
   background: #ffedb0;
-  padding: 6px 0;
-  margin-bottom: 8px;
+  padding: 4px 0;
+  margin-bottom: 6px;
   border-bottom: 1px solid #e5aa00;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
 }
-
 
 .daycard.samstag .prominent-date,
 .daycard.sonntag .prominent-date {
@@ -180,51 +178,54 @@ body {
   justify-content: space-between;
   flex-wrap: wrap;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #2a2a2a;
-  padding: 6px 0;
-  margin-bottom: 8px;
+  padding: 4px 0;
+  margin-bottom: 6px;
 }
 
 .weekday {
   color: #5e8f64;
 }
+
 .prominent-date {
   color: #bb4444;
 }
 
-/* Neue kompakte Darstellung für Info-Blöcke */
+/* Kompaktere Info-Blöcke */
 .info {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
-  font-size: 0.9rem;
-  padding-top: 6px;
+  gap: 8px;
+  font-size: 0.85rem;
+  padding-top: 4px;
 }
 
 .info-block {
   flex: 1 1 48%;
   background: #f4f6fb;
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1.5px solid #9ca7bc;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #9ca7bc;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-direction: row;
-  gap: 8px;
+  gap: 6px;
 }
-
 
 .label {
   font-weight: 600;
   color: #555;
-  margin-bottom: 2px;
+  margin-bottom: 0;
+  font-size: 0.8rem;
 }
+
 .value {
   font-weight: 600;
   color: #222;
+  font-size: 0.85rem;
 }
 
 /* Mobilfreundlich */
