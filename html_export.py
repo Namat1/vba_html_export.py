@@ -90,7 +90,7 @@ body {
   border-radius: 16px;
   padding: 12px 18px;
   border: 2px solid #a8b4cc;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
 .kw-title {
@@ -110,13 +110,25 @@ body {
   border-radius: 14px;
   padding: 16px 18px;
   margin-bottom: 18px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-  border: 1px solid #dce1e7;
+  border: 2px solid #b4bcc9;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
   transition: box-shadow 0.2s;
 }
 
 .daycard:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+}
+
+.daycard.samstag {
+  background: #fff5e5;
+  border-color: #e9a23b;
+  box-shadow: 0 0 0 3px #ffdca1 inset;
+}
+
+.daycard.sonntag {
+  background: #ffeaea;
+  border-color: #d45656;
+  box-shadow: 0 0 0 3px #ffbbbb inset;
 }
 
 .daycard-header {
@@ -152,12 +164,13 @@ body {
   background: #f4f6fb;
   padding: 6px 10px;
   border-radius: 8px;
-  border: 1px solid #ccd3e0;
+  border: 1.5px solid #9ca7bc;
   flex: 1 1 45%;
   display: flex;
   justify-content: space-between;
 }
 """
+
 
 
 
