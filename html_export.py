@@ -45,8 +45,15 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         else:
             uhrzeit, tour = "–", content.strip()
 
+        # CSS-Klasse für Samstag oder Sonntag zuweisen
+        card_class = "daycard"
+        if weekday == "Samstag":
+            card_class += " samstag"
+        elif weekday == "Sonntag":
+            card_class += " sonntag"
+
         html += f"""
-  <div class="daycard">
+  <div class="{card_class}">
     <div class="daycard-header">
       <div class="daycard-date">{date_obj.strftime('%d.%m.%Y')}</div>
       <div class="daycard-weekday">{weekday}</div>
@@ -60,6 +67,7 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
 
     html += "</div></body></html>"
     return html
+
 
 
 
