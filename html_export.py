@@ -155,10 +155,6 @@ body {
   padding: 4px 0;
   margin-bottom: 6px;
   border-bottom: 1px solid #e5aa00;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
 }
 
 .daycard.samstag .prominent-date,
@@ -176,7 +172,8 @@ body {
 .header-row {
   display: flex;
   justify-content: space-between;
-  flex-wrap: wrap;
+  align-items: center;
+  flex-wrap: nowrap;
   font-weight: 600;
   font-size: 0.9rem;
   color: #2a2a2a;
@@ -186,13 +183,16 @@ body {
 
 .weekday {
   color: #5e8f64;
+  font-weight: 600;
+  margin-left: 8px;
 }
 
 .prominent-date {
   color: #bb4444;
+  font-weight: 600;
 }
 
-/* Kompaktere Info-Blöcke */
+/* Kompakte Info-Blöcke */
 .info {
   display: flex;
   justify-content: space-between;
@@ -218,8 +218,8 @@ body {
 .label {
   font-weight: 600;
   color: #555;
-  margin-bottom: 0;
   font-size: 0.8rem;
+  margin-bottom: 0;
 }
 
 .value {
@@ -231,15 +231,16 @@ body {
 /* Mobilfreundlich */
 @media (max-width: 440px) {
   .header-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
   }
   .info {
     flex-direction: column;
   }
 }
 """
+
 
 
 
