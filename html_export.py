@@ -207,8 +207,12 @@ body {
   border-radius: 8px;
   border: 1.5px solid #9ca7bc;
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: row;
+  gap: 8px;
 }
+
 
 .label {
   font-weight: 600;
