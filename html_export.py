@@ -119,18 +119,28 @@ body {
   box-shadow: 0 4px 14px rgba(0,0,0,0.12);
 }
 
-.daycard.samstag {
-  background: #fff3c4;
-  border-color: #e09b00;
-  box-shadow: inset 0 0 0 4px #ffd566, 0 3px 8px rgba(0, 0, 0, 0.1);
-}
-
+/* Samstag & Sonntag gleich hervorheben */
+.daycard.samstag,
 .daycard.sonntag {
-  background: #ffd6d6;
-  border-color: #c63a3a;
-  box-shadow: inset 0 0 0 4px #ff9d9d, 0 3px 8px rgba(0, 0, 0, 0.1);
+  background: #fef3db;
+  border-color: #e7a900;
+  box-shadow: inset 0 0 0 5px #ffd265, 0 4px 10px rgba(0,0,0,0.08);
 }
 
+.daycard.samstag .daycard-date,
+.daycard.sonntag .daycard-date {
+  color: #a85c00;
+}
+
+.daycard.samstag .daycard-weekday,
+.daycard.sonntag .daycard-weekday {
+  color: #7a4e00;
+}
+
+.daycard.samstag .daycard-name,
+.daycard.sonntag .daycard-name {
+  color: #1a3662;
+}
 
 .daycard-header {
   display: flex;
@@ -145,9 +155,11 @@ body {
 .daycard-weekday {
   color: #5e8f64;
 }
+
 .daycard-date {
   color: #bb4444;
 }
+
 .daycard-name {
   color: #3568b5;
 }
@@ -170,7 +182,20 @@ body {
   display: flex;
   justify-content: space-between;
 }
+
+/* Responsiv */
+@media (max-width: 480px) {
+  .daycard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .daycard-info {
+    flex-direction: column;
+  }
+}
 """
+
 
 
 
