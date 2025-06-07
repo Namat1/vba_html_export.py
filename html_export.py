@@ -153,13 +153,15 @@ body {
 .daycard.samstag .header-row,
 .daycard.sonntag .header-row {
   background: #ffedb0;
-  padding: 10px 16px;
-  margin: -12px -16px 8px -16px;
+  padding: 6px 0;
+  margin-bottom: 8px;
   border-bottom: 1px solid #e5aa00;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
 }
+
 
 .daycard.samstag .prominent-date,
 .daycard.sonntag .prominent-date {
