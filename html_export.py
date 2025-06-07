@@ -261,10 +261,24 @@ if uploaded_file:
                     wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
             export_rows.append({"Fahrer": fahrer_name, "Einsätze": " | ".join(wochen_eintraege)})
 
-            html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
-            name_html = fahrer_name.replace(", ", "_").replace(" ", "_")
-            filename = f"KW{kw:02d}_{name_html}.html"
-            html_files[filename] = html_code
+            # Nur Nachname extrahieren
+            nachname = fahrer_name.split(",")[0].strip().replace(" ", "_")
+
+            # Duplikate zählen
+            if not 'namensliste' in locals():
+                namensliste = {}
+
+            if nachname not in namensliste:
+                namensliste[nachname] = 0
+                dateiname = nachname
+            else:
+                namensliste[nachname] += 1
+                dateiname = f"{nachname}_{namensliste[nachname]}"
+
+           filename = f"KW{kw:02d}_{dateiname}.html"
+           html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
+           html_files[filename] = html_code
+
 
 
         export_df = pd.DataFrame(export_rows)
