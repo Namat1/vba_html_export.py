@@ -53,20 +53,17 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
 
         html += f"""
 <div class="{card_class}">
-  <div class="header-row">
-    <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
-    <div class="weekday">{weekday}</div>
-    <div class="prominent-name">{fahrer_name}</div>
+  <div class="header-row compact">
+    <div class="header-left">
+      <div class="date-line">{date_obj.strftime('%d.%m.%Y')} ({weekday})</div>
+    </div>
+    <div class="header-right">
+      <div class="fahrer-name">{fahrer_name}</div>
+    </div>
   </div>
   <div class="info">
-    <div class="info-block">
-      <div class="label">Tour:</div>
-      <div class="value">{tour}</div>
-    </div>
-    <div class="info-block">
-      <div class="label">Uhrzeit:</div>
-      <div class="value">{uhrzeit}</div>
-    </div>
+    <div><span class="label">Tour:</span> <span class="value">{tour}</span></div>
+    <div><span class="label">Uhrzeit:</span> <span class="value">{uhrzeit}</span></div>
   </div>
 </div>"""
 
@@ -78,7 +75,7 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
 css_styles = """
 body {
   font-family: 'Inter', Arial, sans-serif;
-  background: #e3e7ee;
+  background: #f4f6f9;
   margin: 0;
   padding: 0;
   color: #1c1c1c;
@@ -87,29 +84,26 @@ body {
 .container-outer {
   max-width: 460px;
   margin: 28px auto;
-  background: #f9fafc;
-  border-radius: 16px;
-  border: 3px solid #5c6f8c;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-  padding: 20px 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 18px 14px;
 }
 .headline-block {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
+  text-align: center;
+  margin-bottom: 16px;
 }
 .headline-kw-box {
-  text-align: center;
-  border: 3px solid #2a4a9c;
-  border-radius: 14px;
-  padding: 10px 18px;
-  background: #dde5f3;
+  border: 2px solid #355eb5;
+  border-radius: 12px;
+  padding: 8px 16px;
+  background: #e7edfa;
 }
 .headline-kw {
-  font-size: 1.7rem;
-  font-weight: 900;
+  font-size: 1.6rem;
+  font-weight: 800;
   color: #1e3f85;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 .headline-period {
   font-size: 0.95rem;
@@ -118,89 +112,74 @@ body {
 }
 
 .daycard {
-  background: #ffffff;
-  border: 3px solid #6c7d99;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 18px;
-  box-shadow: 0 3px 10px rgba(30, 30, 30, 0.05);
+  background: #fdfdfd;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
-
 .daycard.samstag {
-  background: #fef4e8;
+  background: #fff6e6;
   border-color: #e89b3d;
 }
 .daycard.sonntag {
-  background: #fceaea;
+  background: #ffecec;
   border-color: #d65656;
 }
 
-.header-row {
+.header-row.compact {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #dcdcdc;
+  padding-bottom: 4px;
 }
-.prominent-date,
-.weekday,
-.prominent-name {
-  flex: 1 1 30%;
-  font-size: 1rem;
-  font-weight: 800;
-  text-align: center;
-  color: #ffffff;
-  padding: 7px 10px;
-  border-radius: 8px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+.header-left .date-line {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2a2a2a;
 }
-.prominent-date {
-  background: linear-gradient(to right, #933636, #c74e4e);
-}
-.weekday {
-  background: linear-gradient(to right, #427a42, #63a663);
-}
-.prominent-name {
-  background: linear-gradient(to right, #355eb5, #5f8de3);
+.header-right .fahrer-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #355eb5;
+  text-align: right;
 }
 
 .info {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  gap: 8px;
   margin-top: 6px;
 }
-.info-block {
-  flex: 1 1 48%;
-}
 .label {
-  font-size: 0.8rem;
-  color: #2c436e;
   font-weight: 600;
-  margin-bottom: 2px;
+  color: #555;
+  margin-right: 4px;
 }
 .value {
-  font-size: 0.94rem;
-  font-weight: 700;
-  background: #ecf0f8;
-  padding: 6px 10px;
-  border: 2px solid #889ab5;
+  font-weight: 600;
+  color: #222;
+  background: #f0f3f8;
+  padding: 4px 8px;
   border-radius: 6px;
+  border: 1px solid #aaa;
   display: inline-block;
-  min-width: 40px;
 }
 
 @media (max-width: 480px) {
-  .prominent-date, .weekday, .prominent-name {
-    flex: 1 1 100%;
+  .header-row.compact {
+    flex-direction: column;
+    align-items: flex-start;
   }
-  .info-block {
-    flex: 1 1 100%;
+  .info {
+    flex-direction: column;
   }
 }
-
-
 """
 
 
