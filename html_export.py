@@ -243,13 +243,18 @@ if uploaded_file:
                     if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
                         fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
 
-        export_rows = []
+                export_rows = []
         html_files = {}
+        namensliste = {}  # Nachnamen-Zähler initialisieren
+
         for fahrer_name, eintraege in fahrer_dict.items():
-            if not eintraege: continue
+            if not eintraege:
+                continue
+
             start_datum = min(eintraege.keys())
             start_sonntag = start_datum - pd.Timedelta(days=(start_datum.weekday() + 1) % 7)
             kw = get_kw(start_sonntag) + 1
+
             wochen_eintraege = []
             for i in range(7):
                 tag_datum = start_sonntag + pd.Timedelta(days=i)
@@ -259,14 +264,11 @@ if uploaded_file:
                         wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): {eintrag}")
                 else:
                     wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
+
             export_rows.append({"Fahrer": fahrer_name, "Einsätze": " | ".join(wochen_eintraege)})
 
-            # Nur Nachname extrahieren
+            # === Dateinamen mit Nachname und Duplikat-Suffix ===
             nachname = fahrer_name.split(",")[0].strip().replace(" ", "_")
-
-            # Duplikate zählen
-            if not 'namensliste' in locals():
-                namensliste = {}
 
             if nachname not in namensliste:
                 namensliste[nachname] = 0
@@ -275,9 +277,10 @@ if uploaded_file:
                 namensliste[nachname] += 1
                 dateiname = f"{nachname}_{namensliste[nachname]}"
 
-           filename = f"KW{kw:02d}_{dateiname}.html"
-           html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
-           html_files[filename] = html_code
+            filename = f"KW{kw:02d}_{dateiname}.html"
+            html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
+            html_files[filename] = html_code
+
 
 
 
