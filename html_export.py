@@ -82,18 +82,18 @@ body {
   font-size: 15px;
 }
 
-.page-wrap {
+.container-outer {
   max-width: 500px;
   margin: 28px auto;
   padding: 0 16px;
 }
 
-.headline {
+.headline-block {
   text-align: center;
   margin-bottom: 24px;
 }
 
-.kw-box {
+.headline-kw-box {
   background: #eef2f9;
   border-radius: 16px;
   padding: 12px 18px;
@@ -101,16 +101,23 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
-.kw-title {
+.headline-kw {
   font-size: 1.6rem;
   font-weight: 700;
   color: #1b3a7a;
   margin-bottom: 4px;
 }
 
-.kw-range {
+.headline-period {
   font-size: 0.95rem;
   color: #3e567f;
+}
+
+.headline-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a3662;
+  margin-top: 4px;
 }
 
 .daycard {
@@ -127,7 +134,7 @@ body {
   box-shadow: 0 4px 14px rgba(0,0,0,0.12);
 }
 
-/* Wochenende optisch abheben */
+/* Samstag & Sonntag */
 .daycard.samstag,
 .daycard.sonntag {
   background: #fff3cc;
@@ -137,8 +144,8 @@ body {
   overflow: hidden;
 }
 
-.daycard.samstag .daycard-header,
-.daycard.sonntag .daycard-header {
+.daycard.samstag .header-row,
+.daycard.sonntag .header-row {
   background: #ffedb0;
   padding: 10px 16px;
   margin: -12px -16px 8px -16px;
@@ -148,27 +155,21 @@ body {
   align-items: center;
 }
 
-/* Wochentag + Name für Wochenende */
-.daycard.samstag .daycard-date,
-.daycard.sonntag .daycard-date {
+/* Farben innerhalb von Samstag/Sonntag */
+.daycard.samstag .prominent-date,
+.daycard.sonntag .prominent-date {
   color: #8c5a00;
   font-weight: 700;
 }
 
-.daycard.samstag .daycard-weekday,
-.daycard.sonntag .daycard-weekday {
+.daycard.samstag .weekday,
+.daycard.sonntag .weekday {
   color: #7a4e00;
   font-weight: 700;
 }
 
-.daycard.samstag .daycard-name,
-.daycard.sonntag .daycard-name {
-  color: #1a3662;
-  font-weight: 700;
-}
-
-/* Standardkarten (Mo-Fr) */
-.daycard-header {
+/* Header allgemein (Mo–Fr) */
+.header-row {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
@@ -179,17 +180,14 @@ body {
   margin-bottom: 8px;
 }
 
-.daycard-weekday {
+.weekday {
   color: #5e8f64;
 }
-.daycard-date {
+.prominent-date {
   color: #bb4444;
 }
-.daycard-name {
-  color: #3568b5;
-}
 
-.daycard-info {
+.info {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
@@ -198,24 +196,34 @@ body {
   padding-top: 2px;
 }
 
-.daycard-info div {
+.info-block {
   background: #f4f6fb;
   padding: 6px 10px;
   border-radius: 8px;
   border: 1.5px solid #9ca7bc;
   flex: 1 1 45%;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
 }
 
-/* Responsive Anpassung */
+.label {
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 2px;
+}
+.value {
+  font-weight: 600;
+  color: #222;
+}
+
+/* Responsive */
 @media (max-width: 480px) {
-  .daycard-header {
+  .header-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
   }
-  .daycard-info {
+  .info {
     flex-direction: column;
   }
 }
