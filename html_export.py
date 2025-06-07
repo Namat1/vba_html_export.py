@@ -119,27 +119,42 @@ body {
   box-shadow: 0 4px 14px rgba(0,0,0,0.12);
 }
 
-/* Samstag & Sonntag gleich hervorheben */
+/* Samstag & Sonntag gleich, aber deutlich hervorgehoben */
 .daycard.samstag,
 .daycard.sonntag {
-  background: #fef3db;
-  border-color: #e7a900;
-  box-shadow: inset 0 0 0 5px #ffd265, 0 4px 10px rgba(0,0,0,0.08);
+  background: #fff5dc;
+  border: 2px solid #e6aa00;
+  box-shadow: inset 0 0 0 5px #ffe18c, 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.daycard.samstag .daycard-header,
+.daycard.sonntag .daycard-header {
+  background: #fce9b5;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: -16px -18px 12px -18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #e6aa00;
 }
 
 .daycard.samstag .daycard-date,
 .daycard.sonntag .daycard-date {
   color: #a85c00;
+  font-weight: 700;
 }
 
 .daycard.samstag .daycard-weekday,
 .daycard.sonntag .daycard-weekday {
   color: #7a4e00;
+  font-weight: 700;
 }
 
 .daycard.samstag .daycard-name,
 .daycard.sonntag .daycard-name {
   color: #1a3662;
+  font-weight: 700;
 }
 
 .daycard-header {
