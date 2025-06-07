@@ -160,7 +160,6 @@ body {
   align-items: center;
 }
 
-/* Farben innerhalb von Samstag/Sonntag */
 .daycard.samstag .prominent-date,
 .daycard.sonntag .prominent-date {
   color: #8c5a00;
@@ -173,7 +172,6 @@ body {
   font-weight: 700;
 }
 
-/* Header allgemein (Mo–Fr) */
 .header-row {
   display: flex;
   justify-content: space-between;
@@ -192,21 +190,22 @@ body {
   color: #bb4444;
 }
 
+/* Neue kompakte Darstellung für Info-Blöcke */
 .info {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   font-size: 0.9rem;
-  padding-top: 2px;
+  padding-top: 6px;
 }
 
 .info-block {
+  flex: 1 1 48%;
   background: #f4f6fb;
   padding: 6px 10px;
   border-radius: 8px;
   border: 1.5px solid #9ca7bc;
-  flex: 1 1 45%;
   display: flex;
   flex-direction: column;
 }
@@ -221,8 +220,8 @@ body {
   color: #222;
 }
 
-/* Responsive */
-@media (max-width: 480px) {
+/* Mobilfreundlich */
+@media (max-width: 440px) {
   .header-row {
     flex-direction: column;
     align-items: flex-start;
