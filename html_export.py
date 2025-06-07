@@ -277,7 +277,11 @@ if uploaded_file:
                 namensliste[nachname] += 1
                 dateiname = f"{nachname}_{namensliste[nachname]}"
 
-            filename = f"KW{kw:02d}_{dateiname}.html"
+            if dateiname == "Fechner_1":
+                filename = f"KW{kw:02d}_DFechner.html"
+            else:
+                filename = f"KW{kw:02d}_{dateiname}.html"
+
             html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
             html_files[filename] = html_code
 
