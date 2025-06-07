@@ -27,11 +27,12 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
   <style>{css_styles}</style>
 </head>
 <body>
-<div class="page-wrap">
-  <div class="headline">
-    <div class="kw-box">
-      <div class="kw-title">KW {kw}</div>
-      <div class="kw-range">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+<div class="container-outer">
+  <div class="headline-block">
+    <div class="headline-kw-box">
+      <div class="headline-kw">KW {kw}</div>
+      <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+      <div class="headline-name">{fahrer_name}</div>
     </div>
   </div>"""
 
@@ -45,7 +46,6 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         else:
             uhrzeit, tour = "–", content.strip()
 
-        # CSS-Klasse für Samstag oder Sonntag zuweisen
         card_class = "daycard"
         if weekday == "Samstag":
             card_class += " samstag"
@@ -54,14 +54,19 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
 
         html += f"""
   <div class="{card_class}">
-    <div class="daycard-header">
-      <div class="daycard-date">{date_obj.strftime('%d.%m.%Y')}</div>
-      <div class="daycard-weekday">{weekday}</div>
-      <div class="daycard-name">{fahrer_name}</div>
+    <div class="header-row">
+      <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
+      <div class="weekday">{weekday}</div>
     </div>
-    <div class="daycard-info">
-      <div><strong>Tour:</strong> <span>{tour}</span></div>
-      <div><strong>Uhrzeit:</strong> <span>{uhrzeit}</span></div>
+    <div class="info">
+      <div class="info-block">
+        <div class="label">Tour:</div>
+        <div class="value">{tour}</div>
+      </div>
+      <div class="info-block">
+        <div class="label">Uhrzeit:</div>
+        <div class="value">{uhrzeit}</div>
+      </div>
     </div>
   </div>"""
 
