@@ -27,13 +27,13 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
   <style>{css_styles}</style>
 </head>
 <body>
-<div class="container-outer"><div class="container">
-<div class="headline-block">
-  <div class="headline-kw-box">
-    <div class="headline-kw">KW {kw}</div>
-    <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
-  </div>
-</div>"""
+<div class="page-wrap">
+  <div class="headline">
+    <div class="kw-box">
+      <div class="kw-title">KW {kw}</div>
+      <div class="kw-range">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+    </div>
+  </div>"""
 
     for eintrag in eintraege:
         date_text, content = eintrag.split(": ", 1)
@@ -45,140 +45,117 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         else:
             uhrzeit, tour = "–", content.strip()
 
-        card_class = "daycard"
-        if weekday == "Samstag":
-            card_class += " samstag"
-        elif weekday == "Sonntag":
-            card_class += " sonntag"
-
         html += f"""
-<div class="{card_class}">
-  <div class="header-row compact">
-    <div class="header-left">
-      <div class="date-line">{date_obj.strftime('%d.%m.%Y')} ({weekday})</div>
+  <div class="daycard">
+    <div class="daycard-header">
+      <div class="daycard-date">{date_obj.strftime('%d.%m.%Y')}</div>
+      <div class="daycard-weekday">{weekday}</div>
+      <div class="daycard-name">{fahrer_name}</div>
     </div>
-    <div class="header-right">
-      <div class="fahrer-name">{fahrer_name}</div>
+    <div class="daycard-info">
+      <div><strong>Tour:</strong> <span>{tour}</span></div>
+      <div><strong>Uhrzeit:</strong> <span>{uhrzeit}</span></div>
     </div>
-  </div>
-  <div class="info">
-    <div><span class="label">Tour:</span> <span class="value">{tour}</span></div>
-    <div><span class="label">Uhrzeit:</span> <span class="value">{uhrzeit}</span></div>
-  </div>
-</div>"""
+  </div>"""
 
-    html += "</div></div></body></html>"
+    html += "</div></body></html>"
     return html
+
 
 
 # CSS-Stile 
 css_styles = """
 body {
-  font-family: 'Inter', Arial, sans-serif;
-  background: #f4f6f9;
   margin: 0;
   padding: 0;
-  color: #1c1c1c;
+  background: #f5f7fa;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #1d1d1f;
   font-size: 15px;
 }
-.container-outer {
-  max-width: 460px;
+
+.page-wrap {
+  max-width: 500px;
   margin: 28px auto;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  padding: 18px 14px;
+  padding: 0 16px;
 }
-.headline-block {
+
+.headline {
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
-.headline-kw-box {
-  border: 2px solid #355eb5;
-  border-radius: 12px;
-  padding: 8px 16px;
-  background: #e7edfa;
+
+.kw-box {
+  background: #eef2f9;
+  border-radius: 16px;
+  padding: 12px 18px;
+  border: 2px solid #a8b4cc;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.04);
 }
-.headline-kw {
+
+.kw-title {
   font-size: 1.6rem;
-  font-weight: 800;
-  color: #1e3f85;
-  margin-bottom: 2px;
+  font-weight: 700;
+  color: #1b3a7a;
+  margin-bottom: 4px;
 }
-.headline-period {
+
+.kw-range {
   font-size: 0.95rem;
-  font-weight: 600;
-  color: #2f528e;
+  color: #3e567f;
 }
 
 .daycard {
-  background: #fdfdfd;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin-bottom: 14px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-.daycard.samstag {
-  background: #fff6e6;
-  border-color: #e89b3d;
-}
-.daycard.sonntag {
-  background: #ffecec;
-  border-color: #d65656;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+  border: 1px solid #dce1e7;
+  transition: box-shadow 0.2s;
 }
 
-.header-row.compact {
+.daycard:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.daycard-header {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  margin-bottom: 6px;
-  border-bottom: 1px solid #dcdcdc;
-  padding-bottom: 4px;
-}
-.header-left .date-line {
+  margin-bottom: 10px;
+  font-weight: 600;
   font-size: 0.95rem;
-  font-weight: 700;
   color: #2a2a2a;
 }
-.header-right .fahrer-name {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #355eb5;
-  text-align: right;
+
+.daycard-weekday {
+  color: #5e8f64;
+}
+.daycard-date {
+  color: #bb4444;
+}
+.daycard-name {
+  color: #3568b5;
 }
 
-.info {
+.daycard-info {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
+  gap: 10px;
   font-size: 0.9rem;
-  gap: 8px;
-  margin-top: 6px;
-}
-.label {
-  font-weight: 600;
-  color: #555;
-  margin-right: 4px;
-}
-.value {
-  font-weight: 600;
-  color: #222;
-  background: #f0f3f8;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid #aaa;
-  display: inline-block;
+  padding-top: 4px;
 }
 
-@media (max-width: 480px) {
-  .header-row.compact {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .info {
-    flex-direction: column;
-  }
+.daycard-info div {
+  background: #f4f6fb;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccd3e0;
+  flex: 1 1 45%;
+  display: flex;
+  justify-content: space-between;
 }
 """
 
