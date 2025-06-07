@@ -278,7 +278,7 @@ if uploaded_file:
                 dateiname = f"{nachname}_{namensliste[nachname]}"
 
             if dateiname == "Fechner_1":
-                filename = f"KW{kw:02d}_DFechner.html"
+                filename = f"KW{kw:02d}_KFechner.html"
             elif dateiname == "Scheil_1":
                filename = f"KW{kw:02d}_RScheil.html"
             else:
