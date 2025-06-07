@@ -116,8 +116,8 @@ body {
 .daycard {
   background: #ffffff;
   border-radius: 14px;
-  padding: 16px 18px;
-  margin-bottom: 18px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
   border: 2px solid #b4bcc9;
   box-shadow: 0 3px 8px rgba(0,0,0,0.08);
   transition: box-shadow 0.2s;
@@ -127,29 +127,31 @@ body {
   box-shadow: 0 4px 14px rgba(0,0,0,0.12);
 }
 
-/* Samstag & Sonntag gleich, aber deutlich hervorgehoben */
+/* Wochenende optisch abheben */
 .daycard.samstag,
 .daycard.sonntag {
-  background: #fff5dc;
-  border: 2px solid #e6aa00;
-  box-shadow: inset 0 0 0 5px #ffe18c, 0 4px 10px rgba(0,0,0,0.1);
+  background: #fff3cc;
+  border: 2px solid #e5aa00;
+  box-shadow: inset 0 0 0 4px #ffd566, 0 4px 10px rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
 }
 
 .daycard.samstag .daycard-header,
 .daycard.sonntag .daycard-header {
-  background: #fce9b5;
-  border-radius: 8px;
-  padding: 8px 10px;
-  margin: -16px -18px 12px -18px;
+  background: #ffedb0;
+  padding: 10px 16px;
+  margin: -12px -16px 8px -16px;
+  border-bottom: 1px solid #e5aa00;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #e6aa00;
 }
 
+/* Wochentag + Name für Wochenende */
 .daycard.samstag .daycard-date,
 .daycard.sonntag .daycard-date {
-  color: #a85c00;
+  color: #8c5a00;
   font-weight: 700;
 }
 
@@ -165,24 +167,24 @@ body {
   font-weight: 700;
 }
 
+/* Standardkarten (Mo-Fr) */
 .daycard-header {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  margin-bottom: 10px;
   font-weight: 600;
   font-size: 0.95rem;
   color: #2a2a2a;
+  padding: 6px 0;
+  margin-bottom: 8px;
 }
 
 .daycard-weekday {
   color: #5e8f64;
 }
-
 .daycard-date {
   color: #bb4444;
 }
-
 .daycard-name {
   color: #3568b5;
 }
@@ -193,7 +195,7 @@ body {
   flex-wrap: wrap;
   gap: 10px;
   font-size: 0.9rem;
-  padding-top: 4px;
+  padding-top: 2px;
 }
 
 .daycard-info div {
@@ -206,7 +208,7 @@ body {
   justify-content: space-between;
 }
 
-/* Responsiv */
+/* Responsive Anpassung */
 @media (max-width: 480px) {
   .daycard-header {
     flex-direction: column;
