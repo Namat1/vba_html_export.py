@@ -60,18 +60,19 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     </div>
     <div class="info">
       <div class="info-block">
-        <div class="label">Tour:</div>
-        <div class="value">{tour}</div>
+        <span class="label">Tour:</span>
+        <span class="value">{tour}</span>
       </div>
       <div class="info-block">
-        <div class="label">Uhrzeit:</div>
-        <div class="value">{uhrzeit}</div>
+        <span class="label">Uhrzeit:</span>
+        <span class="value">{uhrzeit}</span>
       </div>
     </div>
   </div>"""
 
     html += "</div></body></html>"
     return html
+
 
 
 
