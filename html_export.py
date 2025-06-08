@@ -60,7 +60,7 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     </div>
     <div class="info">
       <div class="info-block">
-        <span class="label">Tour:</span>
+        <span class="label">Tour / Aufgabe:</span>
         <span class="value">{tour}</span>
       </div>
       <div class="info-block">
