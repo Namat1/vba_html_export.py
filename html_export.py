@@ -261,17 +261,32 @@ if uploaded_file:
             datum = row.iloc[14]  # Spalte O
             tour = row.iloc[15]   # Spalte P
             uhrzeit = row.iloc[8] # Spalte I
-            if pd.isna(datum): continue
-            try: datum_dt = pd.to_datetime(datum)
-            except: continue
-            if pd.isna(uhrzeit): uhrzeit_str = "–"
-            elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0: uhrzeit_str = "00:00"
-            elif isinstance(uhrzeit, datetime): uhrzeit_str = uhrzeit.strftime("%H:%M")
+
+            if pd.isna(datum):
+                continue
+            try:
+                datum_dt = pd.to_datetime(datum)
+            except:
+                continue
+
+            # Uhrzeit korrekt auf HH:MM kürzen
+            if pd.isna(uhrzeit):
+                uhrzeit_str = "–"
+            elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0:
+                uhrzeit_str = "00:00"
+            elif isinstance(uhrzeit, datetime):
+                uhrzeit_str = uhrzeit.strftime("%H:%M")
             else:
-                try: uhrzeit_parsed = pd.to_datetime(uhrzeit)
-                except: uhrzeit_str = str(uhrzeit).strip()
-                else: uhrzeit_str = uhrzeit_parsed.strftime("%H:%M")
+                try:
+                    uhrzeit_parsed = pd.to_datetime(uhrzeit)
+                    uhrzeit_str = uhrzeit_parsed.strftime("%H:%M")
+                except:
+                    uhrzeit_str = str(uhrzeit).strip()
+                    if ":" in uhrzeit_str:
+                        uhrzeit_str = ":".join(uhrzeit_str.split(":")[:2])
+
             eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
+
             for pos in [(3, 4), (6, 7)]:
                 nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
                 vorname = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
@@ -284,9 +299,9 @@ if uploaded_file:
                     if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
                         fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
 
-                export_rows = []
+        export_rows = []
         html_files = {}
-        namensliste = {}  # Nachnamen-Zähler initialisieren
+        namensliste = {}
 
         for fahrer_name, eintraege in fahrer_dict.items():
             if not eintraege:
@@ -308,9 +323,7 @@ if uploaded_file:
 
             export_rows.append({"Fahrer": fahrer_name, "Einsätze": " | ".join(wochen_eintraege)})
 
-            # === Dateinamen mit Nachname und Duplikat-Suffix ===
             nachname = fahrer_name.split(",")[0].strip().replace(" ", "_")
-
             if nachname not in namensliste:
                 namensliste[nachname] = 0
                 dateiname = nachname
@@ -321,16 +334,12 @@ if uploaded_file:
             if dateiname == "Fechner_1":
                 filename = f"KW{kw:02d}_KFechner.html"
             elif dateiname == "Scheil_1":
-               filename = f"KW{kw:02d}_RScheil.html"
+                filename = f"KW{kw:02d}_RScheil.html"
             else:
-               filename = f"KW{kw:02d}_{dateiname}.html"
-
+                filename = f"KW{kw:02d}_{dateiname}.html"
 
             html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
             html_files[filename] = html_code
-
-
-
 
         export_df = pd.DataFrame(export_rows)
         csv = export_df.to_csv(index=False, encoding="utf-8-sig")
@@ -355,3 +364,4 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten: {e}")
+
