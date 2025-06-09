@@ -336,9 +336,14 @@ if uploaded_files:
                             filename = f"KW{kw:02d}_RScheil.html"
                         elif nachname == "Scheil" and vorname == "Eric":
                             filename = f"KW{kw:02d}_Scheil.html"
+                        elif nachname == "Schulz" and vorname == "Julian":
+                            filename = f"KW{kw:02d}_Schulz.html"
+                        elif nachname == "Schulz" and vorname == "Stephan":
+                            filename = f"KW{kw:02d}_STSchulz.html"
                         else:
                             name_clean = nachname.replace(" ", "_")
                             filename = f"KW{kw:02d}_{name_clean}.html"
+
 
                         html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
 
