@@ -246,7 +246,7 @@ body {
 
 
 
-# Streamlit UI
+er verarbeitet nur die letzte datei und nicht alles er soll alle machen und zum kombinierten download anbieten # Streamlit UI
 st.set_page_config(page_title="Touren-Export", layout="centered")
 st.title("Tourenplan als CSV + HTML exportieren")
 
@@ -304,7 +304,7 @@ if uploaded_files:
                             fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
 
         export_rows = []
-        html_files_by_kw = {}
+        html_files = {}
 
         for fahrer_name, eintraege in fahrer_dict.items():
             if not eintraege:
@@ -326,47 +326,44 @@ if uploaded_files:
 
             export_rows.append({"Fahrer": fahrer_name, "Einsätze": " | ".join(wochen_eintraege)})
 
+            # Dateiname nach Sonderregeln erzeugen
             try:
                 nachname, vorname = [s.strip() for s in fahrer_name.split(",")]
             except ValueError:
                 nachname, vorname = fahrer_name.strip(), ""
 
             if nachname == "Fechner" and vorname == "Klaus":
-                dateiname = f"KFechner"
+                filename = f"KW{kw:02d}_KFechner.html"
             elif nachname == "Fechner" and vorname == "Danny":
-                dateiname = f"Fechner"
+                filename = f"KW{kw:02d}_Fechner.html"
             elif nachname == "Scheil" and vorname == "Rene":
-                dateiname = f"RScheil"
+                filename = f"KW{kw:02d}_RScheil.html"
             elif nachname == "Scheil" and vorname == "Eric":
-                dateiname = f"Scheil"
+                filename = f"KW{kw:02d}_Scheil.html"
             elif nachname == "Schulz" and vorname == "Julian":
-                dateiname = f"Schulz"
+                filename = f"KW{kw:02d}_Schulz.html"
             elif nachname == "Schulz" and vorname == "Stephan":
-                dateiname = f"Schulz_1"
+                filename = f"KW{kw:02d}_Schulz_1.html"
             else:
-                dateiname = nachname.replace(" ", "_")
+                name_clean = nachname.replace(" ", "_")
+                filename = f"KW{kw:02d}_{name_clean}.html"
 
-            filename = f"KW{kw:02d}_{dateiname}.html"
             html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
-
-            if kw not in html_files_by_kw:
-                html_files_by_kw[kw] = {}
-            html_files_by_kw[kw][filename] = html_code
+            html_files[filename] = html_code
 
         export_df = pd.DataFrame(export_rows)
         csv = export_df.to_csv(index=False, encoding="utf-8-sig")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = os.path.join(tmpdir, "touren_html_export.zip")
+            kw_folder = f"KW{kw:02d}"
             with ZipFile(zip_path, "w") as zipf:
-                for kw, files in html_files_by_kw.items():
-                    kw_folder = f"KW{kw:02d}"
-                    for name, content in files.items():
-                        subpath = os.path.join(tmpdir, kw_folder, name)
-                        os.makedirs(os.path.dirname(subpath), exist_ok=True)
-                        with open(subpath, "w", encoding="utf-8") as f:
-                            f.write(content)
-                        zipf.write(subpath, arcname=os.path.join(kw_folder, name))
+                for name, content in html_files.items():
+                    subpath = os.path.join(tmpdir, kw_folder, name)
+                    os.makedirs(os.path.dirname(subpath), exist_ok=True)
+                    with open(subpath, "w", encoding="utf-8") as f:
+                        f.write(content)
+                    zipf.write(subpath, arcname=os.path.join(kw_folder, name))
 
             with open(zip_path, "rb") as f:
                 zip_bytes = f.read()
