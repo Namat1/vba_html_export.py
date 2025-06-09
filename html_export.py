@@ -250,54 +250,55 @@ body {
 st.set_page_config(page_title="Touren-Export", layout="centered")
 st.title("Tourenplan als CSV + HTML exportieren")
 
-uploaded_file = st.file_uploader("Excel-Datei hochladen (Blatt 'Touren')", type=["xlsx"])
+uploaded_files = st.file_uploader("Excel-Dateien hochladen (Blatt 'Touren')", type=["xlsx"], accept_multiple_files=True)
 
-if uploaded_file:
+if uploaded_files:
     try:
-        df = pd.read_excel(uploaded_file, sheet_name="Touren", skiprows=4, engine="openpyxl")
-
         fahrer_dict = {}
-        for _, row in df.iterrows():
-            datum = row.iloc[14]  # Spalte O
-            tour = row.iloc[15]   # Spalte P
-            uhrzeit = row.iloc[8] # Spalte I
+        for uploaded_file in uploaded_files:
+            df = pd.read_excel(uploaded_file, sheet_name="Touren", skiprows=4, engine="openpyxl")
 
-            if pd.isna(datum):
-                continue
-            try:
-                datum_dt = pd.to_datetime(datum)
-            except:
-                continue
+            for _, row in df.iterrows():
+                datum = row.iloc[14]  # Spalte O
+                tour = row.iloc[15]   # Spalte P
+                uhrzeit = row.iloc[8] # Spalte I
 
-            # Uhrzeit korrekt auf HH:MM kürzen
-            if pd.isna(uhrzeit):
-                uhrzeit_str = "–"
-            elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0:
-                uhrzeit_str = "00:00"
-            elif isinstance(uhrzeit, datetime):
-                uhrzeit_str = uhrzeit.strftime("%H:%M")
-            else:
+                if pd.isna(datum):
+                    continue
                 try:
-                    uhrzeit_parsed = pd.to_datetime(uhrzeit)
-                    uhrzeit_str = uhrzeit_parsed.strftime("%H:%M")
+                    datum_dt = pd.to_datetime(datum)
                 except:
-                    uhrzeit_str = str(uhrzeit).strip()
-                    if ":" in uhrzeit_str:
-                        uhrzeit_str = ":".join(uhrzeit_str.split(":")[:2])
+                    continue
 
-            eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
+                # Uhrzeit korrekt auf HH:MM kürzen
+                if pd.isna(uhrzeit):
+                    uhrzeit_str = "–"
+                elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0:
+                    uhrzeit_str = "00:00"
+                elif isinstance(uhrzeit, datetime):
+                    uhrzeit_str = uhrzeit.strftime("%H:%M")
+                else:
+                    try:
+                        uhrzeit_parsed = pd.to_datetime(uhrzeit)
+                        uhrzeit_str = uhrzeit_parsed.strftime("%H:%M")
+                    except:
+                        uhrzeit_str = str(uhrzeit).strip()
+                        if ":" in uhrzeit_str:
+                            uhrzeit_str = ":".join(uhrzeit_str.split(":")[:2])
 
-            for pos in [(3, 4), (6, 7)]:
-                nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
-                vorname = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
-                if nachname or vorname:
-                    fahrer_name = f"{nachname}, {vorname}"
-                    if fahrer_name not in fahrer_dict:
-                        fahrer_dict[fahrer_name] = {}
-                    if datum_dt.date() not in fahrer_dict[fahrer_name]:
-                        fahrer_dict[fahrer_name][datum_dt.date()] = []
-                    if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
-                        fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
+                eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
+
+                for pos in [(3, 4), (6, 7)]:
+                    nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
+                    vorname = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
+                    if nachname or vorname:
+                        fahrer_name = f"{nachname}, {vorname}"
+                        if fahrer_name not in fahrer_dict:
+                            fahrer_dict[fahrer_name] = {}
+                        if datum_dt.date() not in fahrer_dict[fahrer_name]:
+                            fahrer_dict[fahrer_name][datum_dt.date()] = []
+                        if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
+                            fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
 
         export_rows = []
         html_files = {}
