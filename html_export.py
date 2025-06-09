@@ -246,131 +246,114 @@ body {
 
 
 
-er verarbeitet nur die letzte datei und nicht alles er soll alle machen und zum kombinierten download anbieten # Streamlit UI
+# Streamlit UI für Mehrfach-Upload
 st.set_page_config(page_title="Touren-Export", layout="centered")
-st.title("Tourenplan als CSV + HTML exportieren")
+st.title("Mehrere Touren-Dateien als HTML-ZIP exportieren")
 
 uploaded_files = st.file_uploader("Excel-Dateien hochladen (Blatt 'Touren')", type=["xlsx"], accept_multiple_files=True)
 
 if uploaded_files:
-    if not isinstance(uploaded_files, list):
-        uploaded_files = [uploaded_files]
-
     try:
-        fahrer_dict = {}
-        for uploaded_file in uploaded_files:
-            df = pd.read_excel(uploaded_file, sheet_name="Touren", skiprows=4, engine="openpyxl")
-
-            for _, row in df.iterrows():
-                datum = row.iloc[14]  # Spalte O
-                tour = row.iloc[15]   # Spalte P
-                uhrzeit = row.iloc[8] # Spalte I
-
-                if pd.isna(datum):
-                    continue
-                try:
-                    datum_dt = pd.to_datetime(datum)
-                except:
-                    continue
-
-                # Uhrzeit korrekt auf HH:MM kürzen
-                if pd.isna(uhrzeit):
-                    uhrzeit_str = "–"
-                elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0:
-                    uhrzeit_str = "00:00"
-                elif isinstance(uhrzeit, datetime):
-                    uhrzeit_str = uhrzeit.strftime("%H:%M")
-                else:
-                    try:
-                        uhrzeit_parsed = pd.to_datetime(uhrzeit)
-                        uhrzeit_str = uhrzeit_parsed.strftime("%H:%M")
-                    except:
-                        uhrzeit_str = str(uhrzeit).strip()
-                        if ":" in uhrzeit_str:
-                            uhrzeit_str = ":".join(uhrzeit_str.split(":")[:2])
-
-                eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
-
-                for pos in [(3, 4), (6, 7)]:
-                    nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
-                    vorname = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
-                    if nachname or vorname:
-                        fahrer_name = f"{nachname}, {vorname}"
-                        if fahrer_name not in fahrer_dict:
-                            fahrer_dict[fahrer_name] = {}
-                        if datum_dt.date() not in fahrer_dict[fahrer_name]:
-                            fahrer_dict[fahrer_name][datum_dt.date()] = []
-                        if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
-                            fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
-
-        export_rows = []
-        html_files = {}
-
-        for fahrer_name, eintraege in fahrer_dict.items():
-            if not eintraege:
-                continue
-
-            start_datum = min(eintraege.keys())
-            start_sonntag = start_datum - pd.Timedelta(days=(start_datum.weekday() + 1) % 7)
-            kw = get_kw(start_sonntag) + 1
-
-            wochen_eintraege = []
-            for i in range(7):
-                tag_datum = start_sonntag + pd.Timedelta(days=i)
-                wochentag = wochentage_deutsch_map.get(tag_datum.strftime("%A"), tag_datum.strftime("%A"))
-                if tag_datum in eintraege:
-                    for eintrag in eintraege[tag_datum]:
-                        wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): {eintrag}")
-                else:
-                    wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
-
-            export_rows.append({"Fahrer": fahrer_name, "Einsätze": " | ".join(wochen_eintraege)})
-
-            # Dateiname nach Sonderregeln erzeugen
-            try:
-                nachname, vorname = [s.strip() for s in fahrer_name.split(",")]
-            except ValueError:
-                nachname, vorname = fahrer_name.strip(), ""
-
-            if nachname == "Fechner" and vorname == "Klaus":
-                filename = f"KW{kw:02d}_KFechner.html"
-            elif nachname == "Fechner" and vorname == "Danny":
-                filename = f"KW{kw:02d}_Fechner.html"
-            elif nachname == "Scheil" and vorname == "Rene":
-                filename = f"KW{kw:02d}_RScheil.html"
-            elif nachname == "Scheil" and vorname == "Eric":
-                filename = f"KW{kw:02d}_Scheil.html"
-            elif nachname == "Schulz" and vorname == "Julian":
-                filename = f"KW{kw:02d}_Schulz.html"
-            elif nachname == "Schulz" and vorname == "Stephan":
-                filename = f"KW{kw:02d}_Schulz_1.html"
-            else:
-                name_clean = nachname.replace(" ", "_")
-                filename = f"KW{kw:02d}_{name_clean}.html"
-
-            html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
-            html_files[filename] = html_code
-
-        export_df = pd.DataFrame(export_rows)
-        csv = export_df.to_csv(index=False, encoding="utf-8-sig")
-
         with tempfile.TemporaryDirectory() as tmpdir:
-            zip_path = os.path.join(tmpdir, "touren_html_export.zip")
-            kw_folder = f"KW{kw:02d}"
+            zip_path = os.path.join(tmpdir, "gesamt_export.zip")
             with ZipFile(zip_path, "w") as zipf:
-                for name, content in html_files.items():
-                    subpath = os.path.join(tmpdir, kw_folder, name)
-                    os.makedirs(os.path.dirname(subpath), exist_ok=True)
-                    with open(subpath, "w", encoding="utf-8") as f:
-                        f.write(content)
-                    zipf.write(subpath, arcname=os.path.join(kw_folder, name))
+
+                for file in uploaded_files:
+                    df = pd.read_excel(file, sheet_name="Touren", skiprows=4, engine="openpyxl")
+
+                    # Verarbeitung wie bisher
+                    fahrer_dict = {}
+                    for _, row in df.iterrows():
+                        datum = row.iloc[14]
+                        tour = row.iloc[15]
+                        uhrzeit = row.iloc[8]
+
+                        if pd.isna(datum):
+                            continue
+                        try:
+                            datum_dt = pd.to_datetime(datum)
+                        except:
+                            continue
+
+                        if pd.isna(uhrzeit):
+                            uhrzeit_str = "–"
+                        elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0:
+                            uhrzeit_str = "00:00"
+                        elif isinstance(uhrzeit, datetime):
+                            uhrzeit_str = uhrzeit.strftime("%H:%M")
+                        else:
+                            try:
+                                uhrzeit_parsed = pd.to_datetime(uhrzeit)
+                                uhrzeit_str = uhrzeit_parsed.strftime("%H:%M")
+                            except:
+                                uhrzeit_str = str(uhrzeit).strip()
+                                if ":" in uhrzeit_str:
+                                    uhrzeit_str = ":".join(uhrzeit_str.split(":")[:2])
+
+                        eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
+
+                        for pos in [(3, 4), (6, 7)]:
+                            nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
+                            vorname = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
+                            if nachname or vorname:
+                                fahrer_name = f"{nachname}, {vorname}"
+                                if fahrer_name not in fahrer_dict:
+                                    fahrer_dict[fahrer_name] = {}
+                                if datum_dt.date() not in fahrer_dict[fahrer_name]:
+                                    fahrer_dict[fahrer_name][datum_dt.date()] = []
+                                if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
+                                    fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
+
+                    html_files = {}
+                    for fahrer_name, eintraege in fahrer_dict.items():
+                        if not eintraege:
+                            continue
+
+                        start_datum = min(eintraege.keys())
+                        start_sonntag = start_datum - pd.Timedelta(days=(start_datum.weekday() + 1) % 7)
+                        kw = get_kw(start_sonntag) + 1
+
+                        wochen_eintraege = []
+                        for i in range(7):
+                            tag_datum = start_sonntag + pd.Timedelta(days=i)
+                            wochentag = wochentage_deutsch_map.get(tag_datum.strftime("%A"), tag_datum.strftime("%A"))
+                            if tag_datum in eintraege:
+                                for eintrag in eintraege[tag_datum]:
+                                    wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): {eintrag}")
+                            else:
+                                wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
+
+                        try:
+                            nachname, vorname = [s.strip() for s in fahrer_name.split(",")]
+                        except ValueError:
+                            nachname, vorname = fahrer_name.strip(), ""
+
+                        if nachname == "Fechner" and vorname == "Klaus":
+                            filename = f"KW{kw:02d}_KFechner.html"
+                        elif nachname == "Fechner" and vorname == "Danny":
+                            filename = f"KW{kw:02d}_Fechner.html"
+                        elif nachname == "Scheil" and vorname == "Rene":
+                            filename = f"KW{kw:02d}_RScheil.html"
+                        elif nachname == "Scheil" and vorname == "Eric":
+                            filename = f"KW{kw:02d}_Scheil.html"
+                        else:
+                            name_clean = nachname.replace(" ", "_")
+                            filename = f"KW{kw:02d}_{name_clean}.html"
+
+                        html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
+
+                        folder_name = os.path.splitext(file.name)[0]
+                        full_path = os.path.join(tmpdir, folder_name, filename)
+                        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                        with open(full_path, "w", encoding="utf-8") as f:
+                            f.write(html_code)
+                        zipf.write(full_path, arcname=os.path.join(folder_name, filename))
 
             with open(zip_path, "rb") as f:
                 zip_bytes = f.read()
 
-        st.success(f"{len(export_df)} Fahrer-Einträge verarbeitet.")
-        st.download_button("CSV herunterladen", data=csv, file_name="touren_kompakt.csv", mime="text/csv")
-        st.download_button("HTML-Archiv herunterladen", data=zip_bytes, file_name="touren_html.zip", mime="application/zip")
+        st.success(f"{len(uploaded_files)} Dateien verarbeitet.")
+        st.download_button("ZIP mit allen HTML-Dateien herunterladen", data=zip_bytes, file_name="gesamt_export.zip", mime="application/zip")
 
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten: {e}")
