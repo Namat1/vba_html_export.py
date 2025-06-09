@@ -305,6 +305,7 @@ if uploaded_files:
 
         export_rows = []
         html_files = {}
+        kw_to_files = {}
 
         for fahrer_name, eintraege in fahrer_dict.items():
             if not eintraege:
@@ -333,37 +334,41 @@ if uploaded_files:
                 nachname, vorname = fahrer_name.strip(), ""
 
             if nachname == "Fechner" and vorname == "Klaus":
-                filename = f"KW{kw:02d}_KFechner.html"
+                dateiname = f"KFechner"
             elif nachname == "Fechner" and vorname == "Danny":
-                filename = f"KW{kw:02d}_Fechner.html"
+                dateiname = f"Fechner"
             elif nachname == "Scheil" and vorname == "Rene":
-                filename = f"KW{kw:02d}_RScheil.html"
+                dateiname = f"RScheil"
             elif nachname == "Scheil" and vorname == "Eric":
-                filename = f"KW{kw:02d}_Scheil.html"
+                dateiname = f"Scheil"
             elif nachname == "Schulz" and vorname == "Julian":
-                filename = f"KW{kw:02d}_Schulz.html"
+                dateiname = f"Schulz"
             elif nachname == "Schulz" and vorname == "Stephan":
-                filename = f"KW{kw:02d}_Schulz_1.html"
+                dateiname = f"Schulz_1"
             else:
-                name_clean = nachname.replace(" ", "_")
-                filename = f"KW{kw:02d}_{name_clean}.html"
+                dateiname = nachname.replace(" ", "_")
 
+            filename = f"KW{kw:02d}_{dateiname}.html"
             html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
-            html_files[filename] = html_code
+
+            if kw not in kw_to_files:
+                kw_to_files[kw] = {}
+            kw_to_files[kw][filename] = html_code
 
         export_df = pd.DataFrame(export_rows)
         csv = export_df.to_csv(index=False, encoding="utf-8-sig")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = os.path.join(tmpdir, "touren_html_export.zip")
-            kw_folder = f"KW{kw:02d}"
             with ZipFile(zip_path, "w") as zipf:
-                for name, content in html_files.items():
-                    subpath = os.path.join(tmpdir, kw_folder, name)
-                    os.makedirs(os.path.dirname(subpath), exist_ok=True)
-                    with open(subpath, "w", encoding="utf-8") as f:
-                        f.write(content)
-                    zipf.write(subpath, arcname=os.path.join(kw_folder, name))
+                for kw, files in kw_to_files.items():
+                    kw_folder = f"KW{kw:02d}"
+                    for name, content in files.items():
+                        subpath = os.path.join(tmpdir, kw_folder, name)
+                        os.makedirs(os.path.dirname(subpath), exist_ok=True)
+                        with open(subpath, "w", encoding="utf-8") as f:
+                            f.write(content)
+                        zipf.write(subpath, arcname=os.path.join(kw_folder, name))
 
             with open(zip_path, "rb") as f:
                 zip_bytes = f.read()
