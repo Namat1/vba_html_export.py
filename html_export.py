@@ -304,8 +304,7 @@ if uploaded_files:
                             fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
 
         export_rows = []
-        html_files = {}
-        kw_to_files = {}
+        html_files_by_kw = {}
 
         for fahrer_name, eintraege in fahrer_dict.items():
             if not eintraege:
@@ -327,7 +326,6 @@ if uploaded_files:
 
             export_rows.append({"Fahrer": fahrer_name, "Einsätze": " | ".join(wochen_eintraege)})
 
-            # Dateiname nach Sonderregeln erzeugen
             try:
                 nachname, vorname = [s.strip() for s in fahrer_name.split(",")]
             except ValueError:
@@ -351,9 +349,9 @@ if uploaded_files:
             filename = f"KW{kw:02d}_{dateiname}.html"
             html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
 
-            if kw not in kw_to_files:
-                kw_to_files[kw] = {}
-            kw_to_files[kw][filename] = html_code
+            if kw not in html_files_by_kw:
+                html_files_by_kw[kw] = {}
+            html_files_by_kw[kw][filename] = html_code
 
         export_df = pd.DataFrame(export_rows)
         csv = export_df.to_csv(index=False, encoding="utf-8-sig")
@@ -361,7 +359,7 @@ if uploaded_files:
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = os.path.join(tmpdir, "touren_html_export.zip")
             with ZipFile(zip_path, "w") as zipf:
-                for kw, files in kw_to_files.items():
+                for kw, files in html_files_by_kw.items():
                     kw_folder = f"KW{kw:02d}"
                     for name, content in files.items():
                         subpath = os.path.join(tmpdir, kw_folder, name)
