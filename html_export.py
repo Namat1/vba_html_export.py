@@ -253,6 +253,9 @@ st.title("Tourenplan als CSV + HTML exportieren")
 uploaded_files = st.file_uploader("Excel-Dateien hochladen (Blatt 'Touren')", type=["xlsx"], accept_multiple_files=True)
 
 if uploaded_files:
+    if not isinstance(uploaded_files, list):
+        uploaded_files = [uploaded_files]
+
     try:
         fahrer_dict = {}
         for uploaded_file in uploaded_files:
