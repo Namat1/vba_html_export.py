@@ -261,7 +261,6 @@ if uploaded_files:
                 for file in uploaded_files:
                     df = pd.read_excel(file, sheet_name="Touren", skiprows=4, engine="openpyxl")
 
-                    # Verarbeitung wie bisher
                     fahrer_dict = {}
                     for _, row in df.iterrows():
                         datum = row.iloc[14]
@@ -304,7 +303,6 @@ if uploaded_files:
                                 if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
                                     fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
 
-                    html_files = {}
                     for fahrer_name, eintraege in fahrer_dict.items():
                         if not eintraege:
                             continue
@@ -344,10 +342,9 @@ if uploaded_files:
                             name_clean = nachname.replace(" ", "_")
                             filename = f"KW{kw:02d}_{name_clean}.html"
 
-
                         html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
 
-                        folder_name = os.path.splitext(file.name)[0]
+                        folder_name = f"KW{kw:02d}"
                         full_path = os.path.join(tmpdir, folder_name, filename)
                         os.makedirs(os.path.dirname(full_path), exist_ok=True)
                         with open(full_path, "w", encoding="utf-8") as f:
