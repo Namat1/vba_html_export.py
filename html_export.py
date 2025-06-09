@@ -301,7 +301,6 @@ if uploaded_file:
 
         export_rows = []
         html_files = {}
-        namensliste = {}
 
         for fahrer_name, eintraege in fahrer_dict.items():
             if not eintraege:
@@ -323,20 +322,23 @@ if uploaded_file:
 
             export_rows.append({"Fahrer": fahrer_name, "Einsätze": " | ".join(wochen_eintraege)})
 
-            nachname = fahrer_name.split(",")[0].strip().replace(" ", "_")
-            if nachname not in namensliste:
-                namensliste[nachname] = 0
-                dateiname = nachname
-            else:
-                namensliste[nachname] += 1
-                dateiname = f"{nachname}_{namensliste[nachname]}"
+            # Dateiname nach Sonderregeln erzeugen
+            try:
+                nachname, vorname = [s.strip() for s in fahrer_name.split(",")]
+            except ValueError:
+                nachname, vorname = fahrer_name.strip(), ""
 
-            if dateiname == "Fechner_1":
+            if nachname == "Fechner" and vorname == "Klaus":
                 filename = f"KW{kw:02d}_KFechner.html"
-            elif dateiname == "Scheil_1":
+            elif nachname == "Fechner" and vorname == "Danny":
+                filename = f"KW{kw:02d}_Fechner.html"
+            elif nachname == "Scheil" and vorname == "Rene":
                 filename = f"KW{kw:02d}_RScheil.html"
+            elif nachname == "Scheil" and vorname == "Eric":
+                filename = f"KW{kw:02d}_Scheil.html"
             else:
-                filename = f"KW{kw:02d}_{dateiname}.html"
+                name_clean = nachname.replace(" ", "_")
+                filename = f"KW{kw:02d}_{name_clean}.html"
 
             html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
             html_files[filename] = html_code
@@ -364,4 +366,3 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten: {e}")
-
