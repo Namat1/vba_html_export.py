@@ -351,8 +351,9 @@ if uploaded_files:
                         with open(full_path, "w", encoding="utf-8") as f:
                             f.write(html_code)
 
-                        # Falls Datei einen Ausschlussbegriff im Namen enthält: löschen und nicht ins ZIP
-                        if any(stichwort in filename.lower() for stichwort in ausschluss_stichwoerter):
+                        # Ausschlussprüfung
+                        filename_lower = filename.lower()
+                        if "ch._holtz" in filename_lower or any(stichwort in filename_lower for stichwort in ausschluss_stichwoerter):
                             os.remove(full_path)
                             continue
 
