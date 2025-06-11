@@ -245,7 +245,6 @@ body {
 
 
 
-
 # Streamlit UI für Mehrfach-Upload
 st.set_page_config(page_title="Touren-Export", layout="centered")
 st.title("Mehrere Touren-Dateien als HTML-ZIP exportieren")
@@ -257,6 +256,8 @@ if uploaded_files:
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = os.path.join(tmpdir, "gesamt_export.zip")
             with ZipFile(zip_path, "w") as zipf:
+
+                ausschluss_stichwoerter = ["zippel", "insel", "paasch", "meyer", "ihde", "devies", "insellogistik"]
 
                 for file in uploaded_files:
                     df = pd.read_excel(file, sheet_name="Touren", skiprows=4, engine="openpyxl")
@@ -349,6 +350,12 @@ if uploaded_files:
                         os.makedirs(os.path.dirname(full_path), exist_ok=True)
                         with open(full_path, "w", encoding="utf-8") as f:
                             f.write(html_code)
+
+                        # Falls Datei einen Ausschlussbegriff im Namen enthält: löschen und nicht ins ZIP
+                        if any(stichwort in filename.lower() for stichwort in ausschluss_stichwoerter):
+                            os.remove(full_path)
+                            continue
+
                         zipf.write(full_path, arcname=os.path.join(folder_name, filename))
 
             with open(zip_path, "rb") as f:
