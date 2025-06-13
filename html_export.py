@@ -289,7 +289,7 @@ body {
 
 # Streamlit UI für Mehrfach-Upload
 st.set_page_config(page_title="Touren-Export", layout="centered")
-st.title("Mehrere Touren-Dateien als HTML-ZIP exportieren")
+st.title("Dienstplan aktualisieren")
 
 uploaded_files = st.file_uploader("Excel-Dateien hochladen (Blatt 'Touren')", type=["xlsx"], accept_multiple_files=True)
 
