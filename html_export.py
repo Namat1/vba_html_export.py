@@ -25,12 +25,11 @@ wochentage_deutsch_map = {
 def get_kw(datum):
     return datum.isocalendar()[1]
 
-def upload_folder_to_ftp_with_progress(local_dir, ftp_dir, progress_bar):
+def upload_folder_to_ftp_with_progress(local_dir, ftp_dir):
     ftp = FTP()
     ftp.connect(FTP_HOST, 21)
     ftp.login(FTP_USER, FTP_PASS)
 
-    # Alle Dateien sammeln
     all_files = []
     for root, _, files in os.walk(local_dir):
         for file in files:
@@ -40,10 +39,12 @@ def upload_folder_to_ftp_with_progress(local_dir, ftp_dir, progress_bar):
     total = len(all_files)
     uploaded = 0
 
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
     for local_path, remote_path in all_files:
         remote_dir = os.path.dirname(remote_path).replace("\\", "/")
 
-        # Verzeichnisse anlegen
         parts = remote_dir.split("/")
         path_built = ""
         for part in parts:
@@ -59,9 +60,12 @@ def upload_folder_to_ftp_with_progress(local_dir, ftp_dir, progress_bar):
             ftp.storbinary(f"STOR {os.path.basename(local_path)}", f)
 
         uploaded += 1
-        progress_bar.progress(uploaded / total)
+        progress = uploaded / total
+        progress_bar.progress(progress)
+        status_text.info(f"Hochgeladen: {uploaded}/{total} – {os.path.basename(local_path)}")
 
     ftp.quit()
+    status_text.success("Alle Dateien erfolgreich hochgeladen.")
 
 # ... dein bestehender Code bleibt unverändert bis:
 
@@ -73,9 +77,7 @@ def upload_folder_to_ftp_with_progress(local_dir, ftp_dir, progress_bar):
                 st.warning("FTP-Zugangsdaten fehlen in .env")
             else:
                 st.info("Starte FTP-Upload...")
-                progress_bar = st.progress(0)
-                upload_folder_to_ftp_with_progress(tmpdir, FTP_BASE_DIR, progress_bar)
-                st.success("FTP-Upload abgeschlossen.")
+                upload_folder_to_ftp_with_progress(tmpdir, FTP_BASE_DIR)
 
         st.success(f"{len(uploaded_files)} Dateien verarbeitet.")
         st.download_button("ZIP mit allen HTML-Dateien herunterladen", data=zip_bytes, file_name="gesamt_export.zip", mime="application/zip")
