@@ -372,7 +372,7 @@ if uploaded_files:
                         name_clean = nachname.replace(" ", "_")
                         filename = f"KW{kw:02d}_{name_clean}.html"
 
-                        html_code = f"<html><body><h2>{fahrer_name} – KW {kw}</h2><ul>"
+                        html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
                         for eintrag in wochen_eintraege:
                             html_code += f"<li>{eintrag}</li>"
                         html_code += "</ul></body></html>"
