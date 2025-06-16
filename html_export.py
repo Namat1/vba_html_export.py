@@ -383,7 +383,7 @@ if uploaded_files:
                         filename_part = sonder_dateien.get((n_clean, v_clean), nachname.replace(" ", "_"))
                         filename = f"KW{kw:02d}_{filename_part}.html"
 
-                        st.write(f"→ {fahrer_name} → {filename}")  # Debug optional
+                        
 
                         html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
 
