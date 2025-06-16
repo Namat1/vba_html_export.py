@@ -330,7 +330,7 @@ if uploaded_files:
                             except:
                                 uhrzeit_str = str(uhrzeit).strip()
                                 if ":" in uhrzeit_str:
-                                    uhrzeit_str = ":".join(uhrzeit_str.split(":" )[:2])
+                                    uhrzeit_str = ":".join(uhrzeit_str.split(":")[:2])
 
                         eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
 
@@ -369,25 +369,23 @@ if uploaded_files:
                         except ValueError:
                             nachname, vorname = fahrer_name.strip(), ""
 
-                        if nachname == "Fechner" and vorname == "Klaus":
-                            filename = f"KW{kw:02d}_KFechner.html"
-                        elif nachname == "Fechner" and vorname == "Danny":
-                            filename = f"KW{kw:02d}_Fechner.html"
-                        elif nachname == "Scheil" and vorname == "Rene":
-                            filename = f"KW{kw:02d}_RScheil.html"
-                        elif nachname == "Scheil" and vorname == "Eric":
-                            filename = f"KW{kw:02d}_Scheil.html"
-                        elif nachname == "Schulz" and vorname == "Julian":
-                            filename = f"KW{kw:02d}_Schulz.html"
-                        elif nachname == "Schulz" and vorname == "Stephan":
-                            filename = f"KW{kw:02d}_STSchulz.html"
-                        else:
-                            name_clean = nachname.replace(" ", "_")
-                            filename = f"KW{kw:02d}_{name_clean}.html"
+                        sonder_dateien = {
+                            ("fechner", "klaus"): "KFechner",
+                            ("fechner", "danny"): "Fechner",
+                            ("scheil", "rene"): "RScheil",
+                            ("scheil", "eric"): "Scheil",
+                            ("schulz", "julian"): "Schulz",
+                            ("schulz", "stephan"): "STSchulz",
+                        }
 
+                        n_clean = nachname.strip().lower()
+                        v_clean = vorname.strip().lower()
+                        filename_part = sonder_dateien.get((n_clean, v_clean), nachname.replace(" ", "_"))
+                        filename = f"KW{kw:02d}_{filename_part}.html"
+
+                        st.write(f"→ {fahrer_name} → {filename}")  # Debug optional
 
                         html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
-                        
 
                         folder_name = f"KW{kw:02d}"
                         full_path = os.path.join(tmpdir, folder_name, filename)
