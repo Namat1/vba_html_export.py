@@ -1,4 +1,3 @@
-# Erweiterungen oben ergänzen
 import streamlit as st
 import pandas as pd
 from io import BytesIO
@@ -69,20 +68,20 @@ def upload_folder_to_ftp_with_progress(local_dir, ftp_dir):
 
 def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     html = f"""<!DOCTYPE html>
-<html lang=\"de\">
+<html lang="de">
 <head>
-  <meta charset=\"UTF-8\">
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KW{kw} – {fahrer_name}</title>
   <style>{css_styles}</style>
 </head>
 <body>
-<div class=\"container-outer\">
-  <div class=\"headline-block\">
-    <div class=\"headline-kw-box\">
-      <div class=\"headline-kw\">KW {kw}</div>
-      <div class=\"headline-period\">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
-      <div class=\"headline-name\">{fahrer_name}</div>
+<div class="container-outer">
+  <div class="headline-block">
+    <div class="headline-kw-box">
+      <div class="headline-kw">KW {kw}</div>
+      <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+      <div class="headline-name">{fahrer_name}</div>
     </div>
   </div>"""
 
@@ -103,19 +102,19 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
             card_class += " sonntag"
 
         html += f"""
-  <div class=\"{card_class}\">
-    <div class=\"header-row\">
-      <div class=\"prominent-date\">{date_obj.strftime('%d.%m.%Y')}</div>
-      <div class=\"weekday\">{weekday}</div>
+  <div class="{card_class}">
+    <div class="header-row">
+      <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
+      <div class="weekday">{weekday}</div>
     </div>
-    <div class=\"info\">
-      <div class=\"info-block\">
-        <span class=\"label\">Tour / Aufgabe:</span>
-        <span class=\"value\">{tour}</span>
+    <div class="info">
+      <div class="info-block">
+        <span class="label">Tour / Aufgabe:</span>
+        <span class="value">{tour}</span>
       </div>
-      <div class=\"info-block\">
-        <span class=\"label\">Uhrzeit:</span>
-        <span class=\"value\">{uhrzeit}</span>
+      <div class="info-block">
+        <span class="label">Uhrzeit:</span>
+        <span class="value">{uhrzeit}</span>
       </div>
     </div>
   </div>"""
@@ -284,25 +283,37 @@ body {
 }
 """
 
-# Der restliche Code (Excel-Verarbeitung + generate_html-Aufruf) bleibt wie gehabt und verwendet jetzt das neue Design.
-
-
 # Streamlit UI für Mehrfach-Upload
 st.set_page_config(page_title="Touren-Export", layout="centered")
 st.title("Dienstplan aktualisieren")
 
-uploaded_files = st.file_uploader("Excel-Dateien hochladen (Blatt 'Touren')", type=["xlsx"], accept_multiple_files=True)
+uploaded_files = st.file_uploader(
+    "Excel-Dateien hochladen (Blatt 'Touren')",
+    type=["xlsx"],
+    accept_multiple_files=True
+)
 
 if uploaded_files:
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = os.path.join(tmpdir, "gesamt_export.zip")
+            csv_records = []  # Liste für CSV-Export
+
             with ZipFile(zip_path, "w") as zipf:
 
-                ausschluss_stichwoerter = ["zippel", "insel", "paasch", "meyer", "ihde", "devies", "insellogistik"]
+                ausschluss_stichwoerter = [
+                    "zippel", "insel", "paasch", "meyer",
+                    "ihde", "devies", "insellogistik"
+                ]
 
+                # Excel-Dateien verarbeiten
                 for file in uploaded_files:
-                    df = pd.read_excel(file, sheet_name="Touren", skiprows=4, engine="openpyxl")
+                    df = pd.read_excel(
+                        file,
+                        sheet_name="Touren",
+                        skiprows=4,
+                        engine="openpyxl"
+                    )
 
                     fahrer_dict = {}
                     for _, row in df.iterrows():
@@ -317,6 +328,7 @@ if uploaded_files:
                         except:
                             continue
 
+                        # Uhrzeit formatieren
                         if pd.isna(uhrzeit):
                             uhrzeit_str = "–"
                         elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0:
@@ -334,18 +346,34 @@ if uploaded_files:
 
                         eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
 
+                        # Fahrer-Namen auslesen
                         for pos in [(3, 4), (6, 7)]:
-                            nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
-                            vorname = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
+                            nachname = (
+                                str(row.iloc[pos[0]]).strip().title()
+                                if pd.notna(row.iloc[pos[0]]) else ""
+                            )
+                            vorname = (
+                                str(row.iloc[pos[1]]).strip().title()
+                                if pd.notna(row.iloc[pos[1]]) else ""
+                            )
                             if nachname or vorname:
                                 fahrer_name = f"{nachname}, {vorname}"
-                                if fahrer_name not in fahrer_dict:
-                                    fahrer_dict[fahrer_name] = {}
-                                if datum_dt.date() not in fahrer_dict[fahrer_name]:
-                                    fahrer_dict[fahrer_name][datum_dt.date()] = []
+                                fahrer_dict.setdefault(fahrer_name, {})
+                                fahrer_dict[fahrer_name].setdefault(
+                                    datum_dt.date(), []
+                                )
                                 if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
                                     fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
 
+                                    # Für CSV: ein Record pro Eintrag
+                                    csv_records.append({
+                                        "Fahrer": fahrer_name,
+                                        "Datum": datum_dt.date().strftime("%Y-%m-%d"),
+                                        "Uhrzeit": uhrzeit_str,
+                                        "Tour/Aufgabe": str(tour).strip()
+                                    })
+
+                    # HTML- und ZIP-Erstellung pro Fahrer
                     for fahrer_name, eintraege in fahrer_dict.items():
                         if not eintraege:
                             continue
@@ -357,13 +385,21 @@ if uploaded_files:
                         wochen_eintraege = []
                         for i in range(7):
                             tag_datum = start_sonntag + pd.Timedelta(days=i)
-                            wochentag = wochentage_deutsch_map.get(tag_datum.strftime("%A"), tag_datum.strftime("%A"))
+                            wochentag = wochentage_deutsch_map.get(
+                                tag_datum.strftime("%A"),
+                                tag_datum.strftime("%A")
+                            )
                             if tag_datum in eintraege:
-                                for eintrag in eintraege[tag_datum]:
-                                    wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): {eintrag}")
+                                for entry in eintraege[tag_datum]:
+                                    wochen_eintraege.append(
+                                        f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): {entry}"
+                                    )
                             else:
-                                wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
+                                wochen_eintraege.append(
+                                    f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –"
+                                )
 
+                        # Sonderfälle für Dateinamen
                         try:
                             nachname, vorname = [s.strip() for s in fahrer_name.split(",")]
                         except ValueError:
@@ -377,15 +413,17 @@ if uploaded_files:
                             ("schulz", "julian"): "Schulz",
                             ("schulz", "stephan"): "STSchulz",
                         }
-
-                        n_clean = nachname.strip().lower()
-                        v_clean = vorname.strip().lower()
-                        filename_part = sonder_dateien.get((n_clean, v_clean), nachname.replace(" ", "_"))
+                        key = (nachname.lower(), vorname.lower())
+                        filename_part = sonder_dateien.get(key, nachname.replace(" ", "_"))
                         filename = f"KW{kw:02d}_{filename_part}.html"
 
-                        
-
-                        html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
+                        html_code = generate_html(
+                            fahrer_name,
+                            wochen_eintraege,
+                            kw,
+                            start_sonntag,
+                            css_styles
+                        )
 
                         folder_name = f"KW{kw:02d}"
                         full_path = os.path.join(tmpdir, folder_name, filename)
@@ -394,12 +432,16 @@ if uploaded_files:
                             f.write(html_code)
 
                         filename_lower = filename.lower()
-                        if "ch._holtz" in filename_lower or any(stichwort in filename_lower for stichwort in ausschluss_stichwoerter):
+                        if (
+                            "ch._holtz" in filename_lower or
+                            any(stichwort in filename_lower for stichwort in ausschluss_stichwoerter)
+                        ):
                             os.remove(full_path)
                             continue
 
                         zipf.write(full_path, arcname=os.path.join(folder_name, filename))
 
+            # ZIP zum Download anbieten
             with open(zip_path, "rb") as f:
                 zip_bytes = f.read()
 
@@ -411,7 +453,22 @@ if uploaded_files:
                     upload_folder_to_ftp_with_progress(tmpdir, FTP_BASE_DIR)
 
             st.success(f"{len(uploaded_files)} Dateien verarbeitet.")
-            st.download_button("ZIP mit allen HTML-Dateien herunterladen", data=zip_bytes, file_name="gesamt_export.zip", mime="application/zip")
+            st.download_button(
+                "ZIP mit allen HTML-Dateien herunterladen",
+                data=zip_bytes,
+                file_name="gesamt_export.zip",
+                mime="application/zip"
+            )
+
+            # CSV-Export anbieten
+            df_export = pd.DataFrame(csv_records)
+            csv_bytes = df_export.to_csv(index=False, sep=';').encode('utf-8-sig')
+            st.download_button(
+                "CSV mit allen Einträgen herunterladen",
+                data=csv_bytes,
+                file_name="touren_export.csv",
+                mime="text/csv"
+            )
 
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten: {e}")
