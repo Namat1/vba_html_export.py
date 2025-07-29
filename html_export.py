@@ -376,6 +376,8 @@ if uploaded_files:
                             ("scheil", "eric"): "Scheil",
                             ("schulz", "julian"): "Schulz",
                             ("schulz", "stephan"): "STSchulz",
+                            ("lewandowski", "kamil"): "lewandowski",
+                            ("lewandowski", "dominik"): "Dlewandowski",
                         }
 
                         n_clean = nachname.strip().lower()
