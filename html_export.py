@@ -25,56 +25,14 @@ wochentage_deutsch_map = {
 def get_kw(datum):
     return datum.isocalendar()[1]
 
-def upload_folder_to_ftp_with_progress(local_dir, ftp_dir):
-    ftp = FTP()
-    ftp.connect(FTP_HOST, 21)
-    ftp.login(FTP_USER, FTP_PASS)
-
-    all_files = []
-    for root, _, files in os.walk(local_dir):
-        for file in files:
-            rel_dir = os.path.relpath(root, local_dir)
-            all_files.append((os.path.join(root, file), os.path.join(ftp_dir, rel_dir, file)))
-
-    total = len(all_files)
-    uploaded = 0
-
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-
-    for local_path, remote_path in all_files:
-        remote_dir = os.path.dirname(remote_path).replace("\\", "/")
-
-        parts = remote_dir.split("/")
-        path_built = ""
-        for part in parts:
-            if part:
-                path_built += "/" + part
-                try:
-                    ftp.mkd(path_built)
-                except:
-                    pass
-
-        with open(local_path, "rb") as f:
-            ftp.cwd(remote_dir)
-            ftp.storbinary(f"STOR {os.path.basename(local_path)}", f)
-
-        uploaded += 1
-        progress = uploaded / total
-        progress_bar.progress(progress)
-        status_text.info(f"Hochgeladen: {uploaded}/{total} – {os.path.basename(local_path)}")
-
-    ftp.quit()
-    status_text.success("Alle Dateien erfolgreich hochgeladen.")
-
 def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     html = f"""<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KW{kw} – {fahrer_name}</title>
-  <style>{css_styles}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KW{kw} – {fahrer_name}</title>
+<style>{css_styles}</style>
 </head>
 <body>
 <div class="container-outer">
@@ -90,7 +48,6 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         date_text, content = eintrag.split(": ", 1)
         date_obj = pd.to_datetime(date_text.split(" ")[0], format="%d.%m.%Y")
         weekday = date_text.split("(")[-1].replace(")", "")
-
         if "–" in content:
             uhrzeit, tour = [x.strip() for x in content.split("–", 1)]
         else:
@@ -100,7 +57,6 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
   <div class="daycard">
     <div class="header-row">
       <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
-
       <div class="pill-row">
         <div class="pill pill-day">{weekday}</div>
         <div class="pill pill-time">{uhrzeit}</div>
@@ -124,15 +80,18 @@ css_styles = """
   --pill-h:26px;
   --pill-pad-x:10px;
 
-  /* sanfte Farben */
-  --pill-day-bg:#edf6f1;
-  --pill-day-bd:#cfe4da;
+  /* DEUTLICHERE Farben */
+  --day-bg:#dff3ea;
+  --day-bd:#3fa37a;
+  --day-tx:#145c43;
 
-  --pill-time-bg:#eef2f7;
-  --pill-time-bd:#d4dbe6;
+  --time-bg:#e3efff;
+  --time-bd:#4c7fd9;
+  --time-tx:#1e3a8a;
 
-  --pill-tour-bg:#e9edf3;
-  --pill-tour-bd:#c7cfdb;
+  --tour-bg:#e5e7eb;
+  --tour-bd:#4b5563;
+  --tour-tx:#111827;
 }
 
 *{box-sizing:border-box}
@@ -204,31 +163,34 @@ body{
   align-items:center;
   justify-content:center;
   font-size:.82rem;
-  font-weight:650;
+  font-weight:700;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
 
-/* leicht differenziert */
+/* FARBE */
 .pill-day{
   width:88px;
-  background:var(--pill-day-bg);
-  border:1px solid var(--pill-day-bd);
+  background:var(--day-bg);
+  border:1px solid var(--day-bd);
+  color:var(--day-tx);
 }
 
 .pill-time{
   width:70px;
-  background:var(--pill-time-bg);
-  border:1px solid var(--pill-time-bd);
+  background:var(--time-bg);
+  border:1px solid var(--time-bd);
+  color:var(--time-tx);
   font-variant-numeric:tabular-nums;
 }
 
 .pill-tour{
   flex:1 1 160px;
   min-width:140px;
-  background:var(--pill-tour-bg);
-  border:1px solid var(--pill-tour-bd);
+  background:var(--tour-bg);
+  border:1px solid var(--tour-bd);
+  color:var(--tour-tx);
 }
 
 @media(max-width:440px){
@@ -253,17 +215,14 @@ if uploaded_files:
             zip_path = os.path.join(tmpdir, "gesamt_export.zip")
             with ZipFile(zip_path, "w") as zipf:
 
-                ausschluss = ["zippel","insel","paasch","meyer","ihde","devies","insellogistik"]
-
                 for file in uploaded_files:
                     df = pd.read_excel(file, sheet_name="Touren", skiprows=4)
-
                     fahrer_dict = {}
+
                     for _, row in df.iterrows():
                         datum = row.iloc[14]
                         tour = row.iloc[15]
                         uhrzeit = row.iloc[8]
-
                         if pd.isna(datum): continue
                         datum_dt = pd.to_datetime(datum, errors="coerce")
                         if pd.isna(datum_dt): continue
@@ -302,9 +261,8 @@ if uploaded_files:
                                 eintraege.append(f"{d.strftime('%d.%m.%Y')} ({wt}): –")
 
                         filename=f"KW{kw:02d}_{name.split(',')[0]}.html"
-                        if any(x in filename.lower() for x in ausschluss): continue
-
                         html=generate_html(name,eintraege,kw,start_sonntag,css_styles)
+
                         path=os.path.join(tmpdir,f"KW{kw:02d}",filename)
                         os.makedirs(os.path.dirname(path),exist_ok=True)
                         open(path,"w",encoding="utf-8").write(html)
