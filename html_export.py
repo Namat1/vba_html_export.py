@@ -1,25 +1,31 @@
-# Erweiterungen oben ergänzen
+# ===============================
+# Imports & Setup
+# ===============================
 import streamlit as st
 import pandas as pd
-from io import BytesIO
 from zipfile import ZipFile
 from datetime import datetime
 import tempfile
 import os
 from ftplib import FTP
-from dotenv import load_dotenv  # für .env Support
+from dotenv import load_dotenv
 
-# .env laden
+# ===============================
+# .env laden (FTP)
+# ===============================
 load_dotenv()
 FTP_HOST = os.getenv("FTP_HOST")
 FTP_USER = os.getenv("FTP_USER")
 FTP_PASS = os.getenv("FTP_PASS")
 FTP_BASE_DIR = os.getenv("FTP_BASE_DIR", "/")
 
-# Deutsche Wochentage
+# ===============================
+# Hilfsfunktionen
+# ===============================
 wochentage_deutsch_map = {
     "Monday": "Montag", "Tuesday": "Dienstag", "Wednesday": "Mittwoch",
-    "Thursday": "Donnerstag", "Friday": "Freitag", "Saturday": "Samstag", "Sunday": "Sonntag"
+    "Thursday": "Donnerstag", "Friday": "Freitag",
+    "Saturday": "Samstag", "Sunday": "Sonntag"
 }
 
 def get_kw(datum):
@@ -36,58 +42,56 @@ def upload_folder_to_ftp_with_progress(local_dir, ftp_dir):
             rel_dir = os.path.relpath(root, local_dir)
             all_files.append((os.path.join(root, file), os.path.join(ftp_dir, rel_dir, file)))
 
-    total = len(all_files)
-    uploaded = 0
+    progress_bar = st.progress(0.0)
+    status = st.empty()
 
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-
-    for local_path, remote_path in all_files:
+    for i, (local_path, remote_path) in enumerate(all_files, start=1):
         remote_dir = os.path.dirname(remote_path).replace("\\", "/")
-
-        parts = remote_dir.split("/")
-        path_built = ""
-        for part in parts:
+        path = ""
+        for part in remote_dir.split("/"):
             if part:
-                path_built += "/" + part
+                path += "/" + part
                 try:
-                    ftp.mkd(path_built)
+                    ftp.mkd(path)
                 except:
                     pass
 
+        ftp.cwd(remote_dir)
         with open(local_path, "rb") as f:
-            ftp.cwd(remote_dir)
             ftp.storbinary(f"STOR {os.path.basename(local_path)}", f)
 
-        uploaded += 1
-        progress = uploaded / total
-        progress_bar.progress(progress)
-        status_text.info(f"Hochgeladen: {uploaded}/{total} – {os.path.basename(local_path)}")
+        progress_bar.progress(i / len(all_files))
+        status.info(f"Hochgeladen {i}/{len(all_files)}: {os.path.basename(local_path)}")
 
     ftp.quit()
-    status_text.success("Alle Dateien erfolgreich hochgeladen.")
+    status.success("FTP-Upload abgeschlossen")
 
-def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
+# ===============================
+# HTML Generator
+# ===============================
+def generate_html(fahrer_name, eintraege, kw, start_date, css):
     html = f"""<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KW{kw} – {fahrer_name}</title>
-  <style>{css_styles}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KW {kw} – {fahrer_name}</title>
+<style>{css}</style>
 </head>
 <body>
 <div class="container-outer">
 
-  <div class="headline-block">
-    <div class="headline-kw-box">
-      <div class="headline-top">
-        <div class="headline-kw">KW {kw}</div>
-        <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+<div class="headline-block">
+  <div class="headline-kw-box">
+    <div class="headline-top">
+      <div class="headline-kw">KW {kw}</div>
+      <div class="headline-period">
+        {start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}
       </div>
-      <div class="headline-name">{fahrer_name}</div>
     </div>
+    <div class="headline-name">{fahrer_name}</div>
   </div>
+</div>
 """
 
     for eintrag in eintraege:
@@ -106,28 +110,24 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         elif weekday == "Sonntag":
             card_class += " sonntag"
 
-        empty_day = (tour.strip() == "–" and uhrzeit.strip() == "–")
-        empty_class = " is-empty" if empty_day else ""
+        empty = (tour == "–" and uhrzeit == "–")
+        empty_class = " is-empty" if empty else ""
 
         html += f"""
-  <div class="{card_class}{empty_class}">
-    <div class="header-row">
-      <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
-      <div class="weekday-badge">{weekday}</div>
-    </div>
-
-    <div class="info">
-      <div>
-        <div class="tour-title">{tour}</div>
-        <div class="tour-sub">Tour / Aufgabe</div>
-      </div>
-
-      <div class="chip">
-        <span class="chip-label">🕒</span>
-        <span>{uhrzeit}</span>
-      </div>
-    </div>
+<div class="{card_class}{empty_class}">
+  <div class="header-row">
+    <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
+    <div class="weekday-badge">{weekday}</div>
   </div>
+
+  <div class="info">
+    <div>
+      <div class="tour-title">{tour}</div>
+      <div class="tour-sub">Tour / Aufgabe</div>
+    </div>
+    <div class="chip">🕒 {uhrzeit}</div>
+  </div>
+</div>
 """
 
     html += """
@@ -137,263 +137,152 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
 """
     return html
 
-# ==========================
-# MODERNES CSS (App-Style)
-# ==========================
+# ===============================
+# Helles CSS Theme (FINAL)
+# ===============================
 css_styles = """
 :root{
-  --bg: #f6f7fb;
-  --surface: rgba(255,255,255,0.85);
-  --card: rgba(255,255,255,0.92);
-  --text: #101318;
-  --muted: #5b6572;
-  --line: rgba(16,19,24,0.12);
-  --shadow: 0 10px 30px rgba(16,19,24,0.10);
-  --shadow-soft: 0 6px 18px rgba(16,19,24,0.08);
-
-  --accent: #1b66b3;
-  --accent-2: #0f4d8a;
-
-  --good: #1f8a4c;
-  --weekend: #9a6b00;
-
-  --radius: 18px;
-  --radius-sm: 12px;
+  --bg:#f2f4f8;
+  --card:#ffffff;
+  --line:#d7dbe2;
+  --text:#1a1d23;
+  --muted:#5f6b7a;
+  --accent:#1b66b3;
+  --good:#1f8a4c;
+  --weekend:#b07200;
+  --shadow:0 4px 14px rgba(0,0,0,.08);
+  --radius:18px;
 }
 
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg: #0b0f14;
-    --surface: rgba(16,20,28,0.75);
-    --card: rgba(18,23,33,0.82);
-    --text: #eef2f7;
-    --muted: #a7b2c1;
-    --line: rgba(238,242,247,0.12);
-    --shadow: 0 14px 40px rgba(0,0,0,0.40);
-    --shadow-soft: 0 10px 25px rgba(0,0,0,0.30);
-  }
-}
-
-*{ box-sizing: border-box; }
-html, body{ height: 100%; }
+*{box-sizing:border-box}
 
 body{
-  margin: 0;
-  background: radial-gradient(1200px 600px at 20% -10%, rgba(27,102,179,0.18), transparent 60%),
-              radial-gradient(900px 500px at 110% 10%, rgba(27,102,179,0.10), transparent 55%),
-              var(--bg);
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  color: var(--text);
-  font-size: 14px;
-  line-height: 1.35;
+  margin:0;
+  background:linear-gradient(180deg,#eef2f7,#f7f9fc);
+  font-family:Inter,system-ui,sans-serif;
+  color:var(--text);
+  font-size:14px;
 }
 
 .container-outer{
-  max-width: 560px;
-  margin: 18px auto 28px;
-  padding: 0 14px;
+  max-width:560px;
+  margin:18px auto 28px;
+  padding:0 14px;
 }
 
-/* HEADER */
 .headline-block{
-  position: sticky;
-  top: 10px;
-  z-index: 50;
-  margin-bottom: 14px;
+  position:sticky;
+  top:10px;
+  z-index:50;
+  margin-bottom:14px;
 }
 
 .headline-kw-box{
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  box-shadow: var(--shadow-soft);
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:14px 16px;
+  box-shadow:var(--shadow);
 }
 
 .headline-top{
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
 }
 
 .headline-kw{
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.2px;
+  font-weight:800;
+  font-size:1.15rem;
 }
 
 .headline-period{
-  font-size: 0.85rem;
-  color: var(--muted);
-  font-weight: 600;
-  text-align: right;
+  color:var(--muted);
+  font-weight:600;
+  font-size:.85rem;
 }
 
 .headline-name{
-  margin-top: 8px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--accent);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  margin-top:8px;
+  font-weight:700;
+  color:var(--accent);
 }
 
-.headline-name::before{
-  content: "";
-  width: 10px;
-  height: 10px;
-  border-radius: 99px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  box-shadow: 0 0 0 3px rgba(27,102,179,0.18);
-}
-
-/* CARDS */
 .daycard{
-  position: relative;
-  border-radius: var(--radius);
-  background: var(--card);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-soft);
-  padding: 12px 12px 12px;
-  margin-bottom: 12px;
-  overflow: hidden;
-}
-
-.daycard::before{
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: linear-gradient(90deg, rgba(27,102,179,0.55), rgba(27,102,179,0.10));
-}
-
-.daycard.samstag::before,
-.daycard.sonntag::before{
-  background: linear-gradient(90deg, rgba(154,107,0,0.60), rgba(154,107,0,0.08));
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:12px;
+  margin-bottom:12px;
 }
 
 .header-row{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:10px;
 }
 
 .prominent-date{
-  font-weight: 800;
-  font-size: 0.98rem;
-  letter-spacing: -0.2px;
+  font-weight:800;
 }
 
 .weekday-badge{
-  font-weight: 800;
-  font-size: 0.80rem;
-  padding: 6px 10px;
-  border-radius: 999px;
-  color: var(--good);
-  background: rgba(31,138,76,0.12);
-  border: 1px solid rgba(31,138,76,0.18);
-  white-space: nowrap;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:.78rem;
+  font-weight:800;
+  background:#e9f6ef;
+  color:var(--good);
+  border:1px solid #cbe8d6;
 }
 
 .daycard.samstag .weekday-badge,
 .daycard.sonntag .weekday-badge{
-  color: var(--weekend);
-  background: rgba(154,107,0,0.12);
-  border: 1px solid rgba(154,107,0,0.18);
+  background:#fff2da;
+  color:var(--weekend);
+  border-color:#f0d39a;
 }
 
-/* CONTENT */
 .info{
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  align-items: start;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
 }
 
 .tour-title{
-  font-weight: 800;
-  font-size: 0.96rem;
-  letter-spacing: -0.1px;
+  font-weight:800;
 }
 
 .tour-sub{
-  margin-top: 4px;
-  color: var(--muted);
-  font-weight: 650;
-  font-size: 0.86rem;
+  font-size:.82rem;
+  color:var(--muted);
 }
 
 .chip{
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: rgba(255,255,255,0.35);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  font-weight: 800;
-  white-space: nowrap;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:#f5f7fb;
+  font-weight:800;
 }
 
-@media (prefers-color-scheme: dark){
-  .chip{
-    background: rgba(18,23,33,0.35);
-  }
-}
+.is-empty .tour-title{color:var(--muted)}
+.is-empty .chip{opacity:.7}
 
-.chip .chip-label{
-  color: var(--muted);
-  font-weight: 800;
-}
-
-/* EMPTY / PLACEHOLDER (wenn “–”) */
-.is-empty .tour-title{
-  color: var(--muted);
-  font-weight: 750;
-}
-.is-empty .chip{
-  opacity: 0.85;
-}
-
-@media (max-width: 420px){
-  .info{
-    grid-template-columns: 1fr;
-  }
-  .headline-top{
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .headline-period{
-    text-align: left;
-  }
-}
-
-/* PRINT */
-@media print{
-  body{ background: #fff; }
-  .headline-block{ position: static; }
-  .headline-kw-box, .daycard{
-    box-shadow: none;
-    backdrop-filter: none;
-  }
-  .daycard{ break-inside: avoid; }
+@media(max-width:420px){
+  .info{grid-template-columns:1fr}
 }
 """
 
-# Streamlit UI für Mehrfach-Upload
-st.set_page_config(page_title="Touren-Export", layout="centered")
+# ===============================
+# Streamlit UI
+# ===============================
+st.set_page_config(page_title="Dienstplan Export", layout="centered")
 st.title("Dienstplan aktualisieren")
 
 uploaded_files = st.file_uploader(
-    "Excel-Dateien hochladen (Blatt 'Touren')",
+    "Excel-Dateien hochladen (Blatt: Touren)",
     type=["xlsx"],
     accept_multiple_files=True
 )
@@ -401,15 +290,14 @@ uploaded_files = st.file_uploader(
 if uploaded_files:
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
-            zip_path = os.path.join(tmpdir, "gesamt_export.zip")
+            zip_path = os.path.join(tmpdir, "dienstplan_export.zip")
             with ZipFile(zip_path, "w") as zipf:
 
-                ausschluss_stichwoerter = ["zippel", "insel", "paasch", "meyer", "ihde", "devies", "insellogistik"]
-
                 for file in uploaded_files:
-                    df = pd.read_excel(file, sheet_name="Touren", skiprows=4, engine="openpyxl")
+                    df = pd.read_excel(file, sheet_name="Touren", skiprows=4)
 
                     fahrer_dict = {}
+
                     for _, row in df.iterrows():
                         datum = row.iloc[14]
                         tour = row.iloc[15]
@@ -417,111 +305,50 @@ if uploaded_files:
 
                         if pd.isna(datum):
                             continue
-                        try:
-                            datum_dt = pd.to_datetime(datum)
-                        except:
-                            continue
 
-                        if pd.isna(uhrzeit):
-                            uhrzeit_str = "–"
-                        elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0:
-                            uhrzeit_str = "00:00"
-                        elif isinstance(uhrzeit, datetime):
-                            uhrzeit_str = uhrzeit.strftime("%H:%M")
-                        else:
-                            try:
-                                uhrzeit_parsed = pd.to_datetime(uhrzeit)
-                                uhrzeit_str = uhrzeit_parsed.strftime("%H:%M")
-                            except:
-                                uhrzeit_str = str(uhrzeit).strip()
-                                if ":" in uhrzeit_str:
-                                    uhrzeit_str = ":".join(uhrzeit_str.split(":")[:2])
+                        datum_dt = pd.to_datetime(datum)
+                        uhrzeit_str = "–" if pd.isna(uhrzeit) else str(uhrzeit)[:5]
 
-                        eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
+                        eintrag = f"{uhrzeit_str} – {str(tour).strip()}"
 
-                        for pos in [(3, 4), (6, 7)]:
-                            nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
-                            vorname = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
-                            if nachname or vorname:
-                                fahrer_name = f"{nachname}, {vorname}"
-                                if fahrer_name not in fahrer_dict:
-                                    fahrer_dict[fahrer_name] = {}
-                                if datum_dt.date() not in fahrer_dict[fahrer_name]:
-                                    fahrer_dict[fahrer_name][datum_dt.date()] = []
-                                if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
-                                    fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
+                        for pos in [(3,4),(6,7)]:
+                            nn = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
+                            vn = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
+                            if nn:
+                                name = f"{nn}, {vn}"
+                                fahrer_dict.setdefault(name, {}).setdefault(datum_dt.date(), []).append(eintrag)
 
-                    for fahrer_name, eintraege in fahrer_dict.items():
-                        if not eintraege:
-                            continue
-
-                        start_datum = min(eintraege.keys())
-                        start_sonntag = start_datum - pd.Timedelta(days=(start_datum.weekday() + 1) % 7)
-                        kw = get_kw(start_sonntag) + 1
+                    for fahrer, daten in fahrer_dict.items():
+                        start = min(daten.keys())
+                        sonntag = start - pd.Timedelta(days=(start.weekday()+1)%7)
+                        kw = get_kw(sonntag) + 1
 
                         wochen_eintraege = []
                         for i in range(7):
-                            tag_datum = start_sonntag + pd.Timedelta(days=i)
-                            wochentag = wochentage_deutsch_map.get(tag_datum.strftime("%A"), tag_datum.strftime("%A"))
-                            if tag_datum in eintraege:
-                                for eintrag in eintraege[tag_datum]:
-                                    wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): {eintrag}")
+                            tag = sonntag + pd.Timedelta(days=i)
+                            wd = wochentage_deutsch_map[tag.strftime("%A")]
+                            if tag in daten:
+                                for e in daten[tag]:
+                                    wochen_eintraege.append(f"{tag.strftime('%d.%m.%Y')} ({wd}): {e}")
                             else:
-                                wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
+                                wochen_eintraege.append(f"{tag.strftime('%d.%m.%Y')} ({wd}): –")
 
-                        try:
-                            nachname, vorname = [s.strip() for s in fahrer_name.split(",")]
-                        except ValueError:
-                            nachname, vorname = fahrer_name.strip(), ""
+                        html = generate_html(fahrer, wochen_eintraege, kw, sonntag, css_styles)
+                        fname = f"KW{kw:02d}_{fahrer.split(',')[0]}.html"
+                        path = os.path.join(tmpdir, fname)
 
-                        sonder_dateien = {
-                            ("fechner", "klaus"): "KFechner",
-                            ("fechner", "danny"): "Fechner",
-                            ("scheil", "rene"): "RScheil",
-                            ("scheil", "eric"): "Scheil",
-                            ("schulz", "julian"): "Schulz",
-                            ("schulz", "stephan"): "STSchulz",
-                            ("lewandowski", "kamil"): "Lewandowski",
-                            ("lewandowski", "dominik"): "DLewandowski",
-                        }
+                        with open(path, "w", encoding="utf-8") as f:
+                            f.write(html)
 
-                        n_clean = nachname.strip().lower()
-                        v_clean = vorname.strip().lower()
-                        filename_part = sonder_dateien.get((n_clean, v_clean), nachname.replace(" ", "_"))
-                        filename = f"KW{kw:02d}_{filename_part}.html"
-
-                        html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
-
-                        folder_name = f"KW{kw:02d}"
-                        full_path = os.path.join(tmpdir, folder_name, filename)
-                        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-                        with open(full_path, "w", encoding="utf-8") as f:
-                            f.write(html_code)
-
-                        filename_lower = filename.lower()
-                        if "ch._holtz" in filename_lower or any(stichwort in filename_lower for stichwort in ausschluss_stichwoerter):
-                            os.remove(full_path)
-                            continue
-
-                        zipf.write(full_path, arcname=os.path.join(folder_name, filename))
+                        zipf.write(path, fname)
 
             with open(zip_path, "rb") as f:
-                zip_bytes = f.read()
-
-            if st.checkbox("Automatisch auf FTP hochladen", value=False):
-                if not all([FTP_HOST, FTP_USER, FTP_PASS]):
-                    st.warning("FTP-Zugangsdaten fehlen in .env")
-                else:
-                    st.info("Starte FTP-Upload...")
-                    upload_folder_to_ftp_with_progress(tmpdir, FTP_BASE_DIR)
-
-            st.success(f"{len(uploaded_files)} Dateien verarbeitet.")
-            st.download_button(
-                "ZIP mit allen HTML-Dateien herunterladen",
-                data=zip_bytes,
-                file_name="gesamt_export.zip",
-                mime="application/zip"
-            )
+                st.download_button(
+                    "ZIP mit HTML-Dateien herunterladen",
+                    f.read(),
+                    file_name="dienstplan_export.zip",
+                    mime="application/zip"
+                )
 
     except Exception as e:
-        st.error(f"Fehler beim Verarbeiten: {e}")
+        st.error(f"Fehler: {e}")
