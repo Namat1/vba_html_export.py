@@ -48,6 +48,7 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         date_text, content = eintrag.split(": ", 1)
         date_obj = pd.to_datetime(date_text.split(" ")[0], format="%d.%m.%Y")
         weekday = date_text.split("(")[-1].replace(")", "")
+
         if "–" in content:
             uhrzeit, tour = [x.strip() for x in content.split("–", 1)]
         else:
@@ -56,8 +57,11 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         html += f"""
   <div class="daycard">
     <div class="header-row">
-      <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
-      <div class="pill-row">
+      <div class="pill-row left">
+        <div class="pill pill-date">{date_obj.strftime('%d.%m.%Y')}</div>
+      </div>
+
+      <div class="pill-row right">
         <div class="pill pill-day">{weekday}</div>
         <div class="pill pill-time">{uhrzeit}</div>
         <div class="pill pill-tour">{tour}</div>
@@ -80,7 +84,11 @@ css_styles = """
   --pill-h:26px;
   --pill-pad-x:10px;
 
-  /* DEUTLICHERE Farben */
+  /* Farben */
+  --date-bg:#fdecec;
+  --date-bd:#e08b8b;
+  --date-tx:#8b2c2c;
+
   --day-bg:#dff3ea;
   --day-bd:#3fa37a;
   --day-tx:#145c43;
@@ -138,12 +146,7 @@ body{
   justify-content:space-between;
   gap:10px;
   flex-wrap:wrap;
-}
-
-.prominent-date{
-  color:#bb4444;
-  font-weight:800;
-  white-space:nowrap;
+  align-items:flex-start;
 }
 
 /* Pills */
@@ -151,6 +154,10 @@ body{
   display:flex;
   gap:8px;
   flex-wrap:wrap;
+  align-items:center;
+}
+
+.pill-row.right{
   flex:1 1 260px;
   justify-content:flex-end;
 }
@@ -169,7 +176,14 @@ body{
   text-overflow:ellipsis;
 }
 
-/* FARBE */
+/* Datum */
+.pill-date{
+  background:var(--date-bg);
+  border:1px solid var(--date-bd);
+  color:var(--date-tx);
+}
+
+/* Tag */
 .pill-day{
   width:88px;
   background:var(--day-bg);
@@ -177,6 +191,7 @@ body{
   color:var(--day-tx);
 }
 
+/* Uhrzeit */
 .pill-time{
   width:70px;
   background:var(--time-bg);
@@ -185,6 +200,7 @@ body{
   font-variant-numeric:tabular-nums;
 }
 
+/* Tour */
 .pill-tour{
   flex:1 1 160px;
   min-width:140px;
@@ -194,7 +210,7 @@ body{
 }
 
 @media(max-width:440px){
-  .pill-row{justify-content:flex-start;}
+  .pill-row.right{justify-content:flex-start;}
   .pill-tour{flex:1 1 100%;min-width:100%;}
 }
 """
@@ -223,54 +239,57 @@ if uploaded_files:
                         datum = row.iloc[14]
                         tour = row.iloc[15]
                         uhrzeit = row.iloc[8]
-                        if pd.isna(datum): continue
+                        if pd.isna(datum):
+                            continue
                         datum_dt = pd.to_datetime(datum, errors="coerce")
-                        if pd.isna(datum_dt): continue
+                        if pd.isna(datum_dt):
+                            continue
 
                         if pd.isna(uhrzeit):
-                            uhrzeit_str="–"
-                        elif isinstance(uhrzeit,datetime):
-                            uhrzeit_str=uhrzeit.strftime("%H:%M")
+                            uhrzeit_str = "–"
+                        elif isinstance(uhrzeit, datetime):
+                            uhrzeit_str = uhrzeit.strftime("%H:%M")
                         else:
-                            uhrzeit_str=str(uhrzeit)[:5]
+                            uhrzeit_str = str(uhrzeit)[:5]
 
-                        eintrag=f"{uhrzeit_str} – {str(tour).strip()}"
+                        eintrag = f"{uhrzeit_str} – {str(tour).strip()}"
 
                         for pos in [(3,4),(6,7)]:
-                            n=row.iloc[pos[0]]
-                            v=row.iloc[pos[1]]
+                            n = row.iloc[pos[0]]
+                            v = row.iloc[pos[1]]
                             if pd.notna(n) or pd.notna(v):
-                                name=f"{str(n).title()}, {str(v).title()}"
-                                fahrer_dict.setdefault(name,{}).setdefault(datum_dt.date(),[])
+                                name = f"{str(n).title()}, {str(v).title()}"
+                                fahrer_dict.setdefault(name, {}).setdefault(datum_dt.date(), [])
                                 if eintrag not in fahrer_dict[name][datum_dt.date()]:
                                     fahrer_dict[name][datum_dt.date()].append(eintrag)
 
                     for name, tage in fahrer_dict.items():
-                        start=min(tage)
-                        start_sonntag=start-pd.Timedelta(days=(start.weekday()+1)%7)
-                        kw=get_kw(start_sonntag)+1
+                        start = min(tage)
+                        start_sonntag = start - pd.Timedelta(days=(start.weekday()+1) % 7)
+                        kw = get_kw(start_sonntag) + 1
 
-                        eintraege=[]
+                        eintraege = []
                         for i in range(7):
-                            d=start_sonntag+pd.Timedelta(days=i)
-                            wt=wochentage_deutsch_map.get(d.strftime("%A"),d.strftime("%A"))
+                            d = start_sonntag + pd.Timedelta(days=i)
+                            wt = wochentage_deutsch_map.get(d.strftime("%A"), d.strftime("%A"))
                             if d in tage:
                                 for e in tage[d]:
                                     eintraege.append(f"{d.strftime('%d.%m.%Y')} ({wt}): {e}")
                             else:
                                 eintraege.append(f"{d.strftime('%d.%m.%Y')} ({wt}): –")
 
-                        filename=f"KW{kw:02d}_{name.split(',')[0]}.html"
-                        html=generate_html(name,eintraege,kw,start_sonntag,css_styles)
+                        filename = f"KW{kw:02d}_{name.split(',')[0]}.html"
+                        html = generate_html(name, eintraege, kw, start_sonntag, css_styles)
 
-                        path=os.path.join(tmpdir,f"KW{kw:02d}",filename)
-                        os.makedirs(os.path.dirname(path),exist_ok=True)
-                        open(path,"w",encoding="utf-8").write(html)
-                        zipf.write(path,arcname=os.path.join(f"KW{kw:02d}",filename))
+                        path = os.path.join(tmpdir, f"KW{kw:02d}", filename)
+                        os.makedirs(os.path.dirname(path), exist_ok=True)
+                        with open(path, "w", encoding="utf-8") as f:
+                            f.write(html)
+                        zipf.write(path, arcname=os.path.join(f"KW{kw:02d}", filename))
 
             st.download_button(
                 "ZIP mit allen HTML-Dateien herunterladen",
-                open(zip_path,"rb").read(),
+                open(zip_path, "rb").read(),
                 "gesamt_export.zip",
                 "application/zip"
             )
