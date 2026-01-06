@@ -97,10 +97,6 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
             uhrzeit, tour = "–", content.strip()
 
         card_class = "daycard"
-        if weekday == "Samstag":
-            card_class += " samstag"
-        elif weekday == "Sonntag":
-            card_class += " sonntag"
 
         html += f"""
   <div class="{card_class}">
@@ -108,8 +104,8 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
       <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
 
       <div class="pill-row">
-        <div class="pill pill-day">{weekday}</div>
-        <div class="pill pill-time">{uhrzeit}</div>
+        <div class="pill pill-day" title="{weekday}">{weekday}</div>
+        <div class="pill pill-time" title="{uhrzeit}">{uhrzeit}</div>
         <div class="pill pill-tour" title="{tour}">{tour}</div>
       </div>
     </div>
@@ -119,12 +115,34 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     return html
 
 css_styles = """
+:root{
+  --bg:#f5f7fa;
+  --card:#ffffff;
+  --text:#1d1d1f;
+  --muted:#5f6b7a;
+  --line:#c9d1de;
+  --line-strong:#b7c3d3;
+  --soft:#f1f4f9;
+  --soft-2:#edf2f7;
+  --shadow:0 2px 8px rgba(0,0,0,0.06);
+
+  --accent:#1a3662;
+  --danger:#bb4444;
+
+  --radius:12px;
+
+  --pill-h:26px;
+  --pill-pad-x:10px;
+}
+
+*{box-sizing:border-box}
+
 body {
   margin: 0;
   padding: 0;
-  background: #f5f7fa;
+  background: var(--bg);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #1d1d1f;
+  color: var(--text);
   font-size: 14px;
 }
 
@@ -136,145 +154,120 @@ body {
 
 .headline-block {
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .headline-kw-box {
-  background: #eef2f9;
+  background: #ffffff;
   border-radius: 12px;
-  padding: 8px 14px;
-  border: 2px solid #a8b4cc;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
 }
 
 .headline-kw {
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 800;
   color: #1b3a7a;
   margin-bottom: 2px;
 }
 
 .headline-period {
   font-size: 0.85rem;
-  color: #3e567f;
+  color: var(--muted);
+  font-weight: 650;
 }
 
 .headline-name {
   font-size: 0.95rem;
-  font-weight: 600;
-  color: #1a3662;
-  margin-top: 2px;
+  font-weight: 800;
+  color: var(--accent);
+  margin-top: 4px;
 }
 
 .daycard {
-  background: #ffffff;
-  border-radius: 12px;
+  background: var(--card);
+  border-radius: var(--radius);
   padding: 8px 12px;
-  margin-bottom: 12px;
-  border: 1.5px solid #b4bcc9;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
-  transition: box-shadow 0.2s;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
 }
 
-.daycard:hover {
-  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-}
-
-.daycard.samstag,
-.daycard.sonntag {
-  background: #fff3cc;
-  border: 1.5px solid #e5aa00;
-  box-shadow: inset 0 0 0 3px #ffd566, 0 3px 8px rgba(0, 0, 0, 0.06);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.daycard.samstag .header-row,
-.daycard.sonntag .header-row {
-  background: #ffedb0;
-  padding: 6px 8px;
-  margin: -8px -12px -2px -12px;
-  border-bottom: 1px solid #e5aa00;
-}
-
-.daycard.samstag .prominent-date,
-.daycard.sonntag .prominent-date {
-  color: #8c5a00;
-  font-weight: 700;
-}
-
+/* Header Row */
 .header-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  flex-wrap: nowrap;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #2a2a2a;
-  padding: 4px 0;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap; /* wichtig, falls es eng wird */
 }
 
 .prominent-date {
-  color: #bb4444;
-  font-weight: 700;
+  color: var(--danger);
+  font-weight: 800;
+  white-space: nowrap;
 }
 
-/* ===== Pills (clean) ===== */
+/* Pills: passen immer rein */
 .pill-row{
   display:flex;
   gap:8px;
   align-items:center;
+  justify-content:flex-end;
+  flex-wrap: wrap;          /* <- wichtig */
+  flex: 1 1 260px;          /* <- nimmt verfügbaren Platz */
+  min-width: 200px;
 }
 
 .pill{
-  height: 26px;
+  height: var(--pill-h);
   border-radius: 999px;
-  border: 1px solid #c9d1de;
-  background: #f1f4f9;
+  border: 1px solid var(--line);
+  background: var(--soft);
   display:flex;
   align-items:center;
   justify-content:center;
-  padding: 0 10px;
+  padding: 0 var(--pill-pad-x);
   font-weight: 650;
   font-size: 0.82rem;
   white-space: nowrap;
-}
-
-.pill-day{
-  width: 92px;
   overflow:hidden;
   text-overflow: ellipsis;
+}
+
+/* Tag / Zeit: fix, schlank */
+.pill-day{
+  width: 88px;
 }
 
 .pill-time{
-  width: 92px;
+  width: 70px;
   font-variant-numeric: tabular-nums;
 }
 
-/* Tour: nur minimal hervorgehoben (ruhig, clean) */
+/* Tour: flexibel, aber mit Mindestbreite */
 .pill-tour{
-  width: 160px;
-  overflow:hidden;
-  text-overflow: ellipsis;
+  flex: 1 1 160px;      /* <- wächst, wenn Platz da ist */
+  min-width: 140px;
 
-  background: #edf2f7;     /* minimal dunkler als die anderen */
-  border-color: #b7c3d3;    /* minimal kräftigerer Rand */
-  font-weight: 750;         /* leicht stärker */
-  color: #111827;           /* neutral */
+  /* minimale Hervorhebung (clean) */
+  background: var(--soft-2);
+  border-color: var(--line-strong);
+  font-weight: 750;
+  color: #111827;
 }
 
+/* Mobile: Tour darf ganze Zeile nehmen */
 @media (max-width: 440px) {
-  .header-row {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
   .pill-row{
-    width: 100%;
-    justify-content: flex-end;
+    justify-content:flex-start;
+    flex: 1 1 100%;
+    min-width: 100%;
   }
   .pill-tour{
-    width: 100%;
+    flex: 1 1 100%;
+    min-width: 100%;
   }
 }
 """
