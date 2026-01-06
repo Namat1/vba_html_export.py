@@ -69,22 +69,26 @@ def upload_folder_to_ftp_with_progress(local_dir, ftp_dir):
 
 def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     html = f"""<!DOCTYPE html>
-<html lang=\"de\">
+<html lang="de">
 <head>
-  <meta charset=\"UTF-8\">
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KW{kw} – {fahrer_name}</title>
   <style>{css_styles}</style>
 </head>
 <body>
-<div class=\"container-outer\">
-  <div class=\"headline-block\">
-    <div class=\"headline-kw-box\">
-      <div class=\"headline-kw\">KW {kw}</div>
-      <div class=\"headline-period\">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
-      <div class=\"headline-name\">{fahrer_name}</div>
+<div class="container-outer">
+
+  <div class="headline-block">
+    <div class="headline-kw-box">
+      <div class="headline-top">
+        <div class="headline-kw">KW {kw}</div>
+        <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+      </div>
+      <div class="headline-name">{fahrer_name}</div>
     </div>
-  </div>"""
+  </div>
+"""
 
     for eintrag in eintraege:
         date_text, content = eintrag.split(": ", 1)
@@ -102,196 +106,297 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         elif weekday == "Sonntag":
             card_class += " sonntag"
 
-        html += f"""
-  <div class=\"{card_class}\">
-    <div class=\"header-row\">
-      <div class=\"prominent-date\">{date_obj.strftime('%d.%m.%Y')}</div>
-      <div class=\"weekday\">{weekday}</div>
-    </div>
-    <div class=\"info\">
-      <div class=\"info-block\">
-        <span class=\"label\">Tour / Aufgabe:</span>
-        <span class=\"value\">{tour}</span>
-      </div>
-      <div class=\"info-block\">
-        <span class=\"label\">Uhrzeit:</span>
-        <span class=\"value\">{uhrzeit}</span>
-      </div>
-    </div>
-  </div>"""
+        empty_day = (tour.strip() == "–" and uhrzeit.strip() == "–")
+        empty_class = " is-empty" if empty_day else ""
 
-    html += "</div></body></html>"
+        html += f"""
+  <div class="{card_class}{empty_class}">
+    <div class="header-row">
+      <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
+      <div class="weekday-badge">{weekday}</div>
+    </div>
+
+    <div class="info">
+      <div>
+        <div class="tour-title">{tour}</div>
+        <div class="tour-sub">Tour / Aufgabe</div>
+      </div>
+
+      <div class="chip">
+        <span class="chip-label">🕒</span>
+        <span>{uhrzeit}</span>
+      </div>
+    </div>
+  </div>
+"""
+
+    html += """
+</div>
+</body>
+</html>
+"""
     return html
 
+# ==========================
+# MODERNES CSS (App-Style)
+# ==========================
 css_styles = """
-body {
+:root{
+  --bg: #f6f7fb;
+  --surface: rgba(255,255,255,0.85);
+  --card: rgba(255,255,255,0.92);
+  --text: #101318;
+  --muted: #5b6572;
+  --line: rgba(16,19,24,0.12);
+  --shadow: 0 10px 30px rgba(16,19,24,0.10);
+  --shadow-soft: 0 6px 18px rgba(16,19,24,0.08);
+
+  --accent: #1b66b3;
+  --accent-2: #0f4d8a;
+
+  --good: #1f8a4c;
+  --weekend: #9a6b00;
+
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg: #0b0f14;
+    --surface: rgba(16,20,28,0.75);
+    --card: rgba(18,23,33,0.82);
+    --text: #eef2f7;
+    --muted: #a7b2c1;
+    --line: rgba(238,242,247,0.12);
+    --shadow: 0 14px 40px rgba(0,0,0,0.40);
+    --shadow-soft: 0 10px 25px rgba(0,0,0,0.30);
+  }
+}
+
+*{ box-sizing: border-box; }
+html, body{ height: 100%; }
+
+body{
   margin: 0;
-  padding: 0;
-  background: #f5f7fa;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #1d1d1f;
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(27,102,179,0.18), transparent 60%),
+              radial-gradient(900px 500px at 110% 10%, rgba(27,102,179,0.10), transparent 55%),
+              var(--bg);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--text);
   font-size: 14px;
+  line-height: 1.35;
 }
 
-.container-outer {
-  max-width: 500px;
-  margin: 20px auto;
-  padding: 0 12px;
+.container-outer{
+  max-width: 560px;
+  margin: 18px auto 28px;
+  padding: 0 14px;
 }
 
-.headline-block {
-  text-align: center;
-  margin-bottom: 16px;
+/* HEADER */
+.headline-block{
+  position: sticky;
+  top: 10px;
+  z-index: 50;
+  margin-bottom: 14px;
 }
 
-.headline-kw-box {
-  background: #eef2f9;
-  border-radius: 12px;
-  padding: 8px 14px;
-  border: 2px solid #a8b4cc;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+.headline-kw-box{
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-soft);
 }
 
-.headline-kw {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #1b3a7a;
-  margin-bottom: 2px;
+.headline-top{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.headline-period {
+.headline-kw{
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.headline-period{
   font-size: 0.85rem;
-  color: #3e567f;
-}
-
-.headline-name {
-  font-size: 0.95rem;
+  color: var(--muted);
   font-weight: 600;
-  color: #1a3662;
-  margin-top: 2px;
+  text-align: right;
 }
 
-.daycard {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 8px 12px;
+.headline-name{
+  margin-top: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.headline-name::before{
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 99px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 0 3px rgba(27,102,179,0.18);
+}
+
+/* CARDS */
+.daycard{
+  position: relative;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-soft);
+  padding: 12px 12px 12px;
   margin-bottom: 12px;
-  border: 1.5px solid #b4bcc9;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
-  transition: box-shadow 0.2s;
-}
-
-.daycard:hover {
-  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-}
-
-.daycard.samstag,
-.daycard.sonntag {
-  background: #fff3cc;
-  border: 1.5px solid #e5aa00;
-  box-shadow: inset 0 0 0 3px #ffd566, 0 3px 8px rgba(0, 0, 0, 0.06);
-  border-radius: 12px;
   overflow: hidden;
 }
 
-.daycard.samstag .header-row,
-.daycard.sonntag .header-row {
-  background: #ffedb0;
-  padding: 4px 0;
-  margin-bottom: 6px;
-  border-bottom: 1px solid #e5aa00;
+.daycard::before{
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(27,102,179,0.55), rgba(27,102,179,0.10));
 }
 
-.daycard.samstag .prominent-date,
-.daycard.sonntag .prominent-date {
-  color: #8c5a00;
-  font-weight: 700;
+.daycard.samstag::before,
+.daycard.sonntag::before{
+  background: linear-gradient(90deg, rgba(154,107,0,0.60), rgba(154,107,0,0.08));
 }
 
-.daycard.samstag .weekday,
-.daycard.sonntag .weekday {
-  color: #7a4e00;
-  font-weight: 700;
-}
-
-.header-row {
+.header-row{
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  flex-wrap: nowrap;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #2a2a2a;
-  padding: 4px 0;
-  margin-bottom: 6px;
-}
-
-.weekday {
-  color: #5e8f64;
-  font-weight: 600;
-  margin-left: 8px;
-}
-
-.prominent-date {
-  color: #bb4444;
-  font-weight: 600;
-}
-
-.info {
-  display: flex;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: 0.85rem;
-  padding-top: 4px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
-.info-block {
-  flex: 1 1 48%;
-  background: #f4f6fb;
-  padding: 4px 6px;
-  border-radius: 6px;
-  border: 1px solid #9ca7bc;
-  display: flex;
-  justify-content: space-between;
+.prominent-date{
+  font-weight: 800;
+  font-size: 0.98rem;
+  letter-spacing: -0.2px;
+}
+
+.weekday-badge{
+  font-weight: 800;
+  font-size: 0.80rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: var(--good);
+  background: rgba(31,138,76,0.12);
+  border: 1px solid rgba(31,138,76,0.18);
+  white-space: nowrap;
+}
+
+.daycard.samstag .weekday-badge,
+.daycard.sonntag .weekday-badge{
+  color: var(--weekend);
+  background: rgba(154,107,0,0.12);
+  border: 1px solid rgba(154,107,0,0.18);
+}
+
+/* CONTENT */
+.info{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.tour-title{
+  font-weight: 800;
+  font-size: 0.96rem;
+  letter-spacing: -0.1px;
+}
+
+.tour-sub{
+  margin-top: 4px;
+  color: var(--muted);
+  font-weight: 650;
+  font-size: 0.86rem;
+}
+
+.chip{
+  display: inline-flex;
   align-items: center;
-  flex-direction: row;
   gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  font-weight: 800;
+  white-space: nowrap;
 }
 
-.label {
-  font-weight: 600;
-  color: #555;
-  font-size: 0.8rem;
-  margin-bottom: 0;
-}
-
-.value {
-  font-weight: 600;
-  color: #222;
-  font-size: 0.85rem;
-}
-
-@media (max-width: 440px) {
-  .header-row {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 4px;
+@media (prefers-color-scheme: dark){
+  .chip{
+    background: rgba(18,23,33,0.35);
   }
-  .info {
+}
+
+.chip .chip-label{
+  color: var(--muted);
+  font-weight: 800;
+}
+
+/* EMPTY / PLACEHOLDER (wenn “–”) */
+.is-empty .tour-title{
+  color: var(--muted);
+  font-weight: 750;
+}
+.is-empty .chip{
+  opacity: 0.85;
+}
+
+@media (max-width: 420px){
+  .info{
+    grid-template-columns: 1fr;
+  }
+  .headline-top{
     flex-direction: column;
+    align-items: flex-start;
   }
+  .headline-period{
+    text-align: left;
+  }
+}
+
+/* PRINT */
+@media print{
+  body{ background: #fff; }
+  .headline-block{ position: static; }
+  .headline-kw-box, .daycard{
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .daycard{ break-inside: avoid; }
 }
 """
-
-# Der restliche Code (Excel-Verarbeitung + generate_html-Aufruf) bleibt wie gehabt und verwendet jetzt das neue Design.
-
 
 # Streamlit UI für Mehrfach-Upload
 st.set_page_config(page_title="Touren-Export", layout="centered")
 st.title("Dienstplan aktualisieren")
 
-uploaded_files = st.file_uploader("Excel-Dateien hochladen (Blatt 'Touren')", type=["xlsx"], accept_multiple_files=True)
+uploaded_files = st.file_uploader(
+    "Excel-Dateien hochladen (Blatt 'Touren')",
+    type=["xlsx"],
+    accept_multiple_files=True
+)
 
 if uploaded_files:
     try:
@@ -385,8 +490,6 @@ if uploaded_files:
                         filename_part = sonder_dateien.get((n_clean, v_clean), nachname.replace(" ", "_"))
                         filename = f"KW{kw:02d}_{filename_part}.html"
 
-                        
-
                         html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
 
                         folder_name = f"KW{kw:02d}"
@@ -413,9 +516,12 @@ if uploaded_files:
                     upload_folder_to_ftp_with_progress(tmpdir, FTP_BASE_DIR)
 
             st.success(f"{len(uploaded_files)} Dateien verarbeitet.")
-            st.download_button("ZIP mit allen HTML-Dateien herunterladen", data=zip_bytes, file_name="gesamt_export.zip", mime="application/zip")
+            st.download_button(
+                "ZIP mit allen HTML-Dateien herunterladen",
+                data=zip_bytes,
+                file_name="gesamt_export.zip",
+                mime="application/zip"
+            )
 
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten: {e}")
-
-
