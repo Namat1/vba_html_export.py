@@ -69,48 +69,54 @@ def upload_folder_to_ftp_with_progress(local_dir, ftp_dir):
 
 def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     html = f"""<!DOCTYPE html>
-<html lang="de">
+<html lang=\"de\">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset=\"UTF-8\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
   <title>KW{kw} – {fahrer_name}</title>
   <style>{css_styles}</style>
 </head>
 <body>
-<div class="container-outer">
-  <div class="headline-block">
-    <div class="headline-kw-box">
-      <div class="headline-kw">KW {kw}</div>
-      <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
-      <div class="headline-name">{fahrer_name}</div>
+<div class=\"container-outer\">
+  <div class=\"headline-block\">
+    <div class=\"headline-kw-box\">
+      <div class=\"headline-kw\">KW {kw}</div>
+      <div class=\"headline-period\">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
+      <div class=\"headline-name\">{fahrer_name}</div>
     </div>
   </div>"""
 
     for eintrag in eintraege:
         date_text, content = eintrag.split(": ", 1)
         date_obj = pd.to_datetime(date_text.split(" ")[0], format="%d.%m.%Y")
-        weekday = date_text.split("(")[-1].replace(")", "").strip()
+        weekday = date_text.split("(")[-1].replace(")", "")
 
-        content = (content or "").strip()
-
-        # robust: keine leeren Pills mehr
-        if content in ["–", "-", "—", ""]:
-            uhrzeit, tour = "–", "–"
+        if "–" in content:
+            uhrzeit, tour = [x.strip() for x in content.split("–", 1)]
         else:
-            if "–" in content:
-                left, right = [x.strip() for x in content.split("–", 1)]
-                uhrzeit = left if left else "–"
-                tour = right if right else "–"
-            else:
-                uhrzeit, tour = "–", content
+            uhrzeit, tour = "–", content.strip()
+
+        card_class = "daycard"
+        if weekday == "Samstag":
+            card_class += " samstag"
+        elif weekday == "Sonntag":
+            card_class += " sonntag"
 
         html += f"""
-  <div class="daycard">
-    <div class="pill-row">
-      <div class="pill pill-date" title="{date_obj.strftime('%d.%m.%Y')}">{date_obj.strftime('%d.%m.%Y')}</div>
-      <div class="pill pill-day" title="{weekday}">{weekday}</div>
-      <div class="pill pill-time" title="{uhrzeit}">{uhrzeit}</div>
-      <div class="pill pill-tour" title="{tour}">{tour}</div>
+  <div class=\"{card_class}\">
+    <div class=\"header-row\">
+      <div class=\"prominent-date\">{date_obj.strftime('%d.%m.%Y')}</div>
+      <div class=\"weekday\">{weekday}</div>
+    </div>
+    <div class=\"info\">
+      <div class=\"info-block\">
+        <span class=\"label\">Tour / Aufgabe:</span>
+        <span class=\"value\">{tour}</span>
+      </div>
+      <div class=\"info-block\">
+        <span class=\"label\">Uhrzeit:</span>
+        <span class=\"value\">{uhrzeit}</span>
+      </div>
     </div>
   </div>"""
 
@@ -118,151 +124,168 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     return html
 
 css_styles = """
-:root{
-  --bg:#f5f7fa;
-  --card:#ffffff;
-  --text:#1d1d1f;
-  --muted:#5f6b7a;
-  --line:#c9d1de;
-  --shadow:0 2px 8px rgba(0,0,0,0.06);
-
-  --radius:12px;
-
-  --pill-h:28px;
-  --pill-pad-x:10px;
-
-  /* kräftiger, aber clean */
-  --date-bg:#ffe4e6; --date-bd:#fb7185; --date-tx:#9f1239;
-  --day-bg:#d1fae5;  --day-bd:#10b981;  --day-tx:#065f46;
-  --time-bg:#dbeafe; --time-bd:#3b82f6; --time-tx:#1e3a8a;
-  --tour-bg:#e5e7eb; --tour-bd:#4b5563; --tour-tx:#111827;
+body {
+  margin: 0;
+  padding: 0;
+  background: #f5f7fa;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #1d1d1f;
+  font-size: 14px;
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  padding:0;
-  background:var(--bg);
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-  color:var(--text);
-  font-size:14px;
+.container-outer {
+  max-width: 500px;
+  margin: 20px auto;
+  padding: 0 12px;
 }
 
-.container-outer{
-  max-width:500px;
-  margin:20px auto;
-  padding:0 12px;
+.headline-block {
+  text-align: center;
+  margin-bottom: 16px;
 }
 
-.headline-block{
-  text-align:center;
-  margin-bottom:16px;
+.headline-kw-box {
+  background: #eef2f9;
+  border-radius: 12px;
+  padding: 8px 14px;
+  border: 2px solid #a8b4cc;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-.headline-kw-box{
-  background:#eef2f9;
-  border-radius:12px;
-  padding:8px 14px;
-  border:2px solid #a8b4cc;
-  box-shadow:0 2px 5px rgba(0,0,0,0.05);
+.headline-kw {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1b3a7a;
+  margin-bottom: 2px;
 }
 
-.headline-kw{
-  font-size:1.3rem;
-  font-weight:700;
-  color:#1b3a7a;
-  margin-bottom:2px;
+.headline-period {
+  font-size: 0.85rem;
+  color: #3e567f;
 }
 
-.headline-period{
-  font-size:0.85rem;
-  color:#3e567f;
+.headline-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a3662;
+  margin-top: 2px;
 }
 
-.headline-name{
-  font-size:0.95rem;
-  font-weight:600;
-  color:#1a3662;
-  margin-top:2px;
+.daycard {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border: 1.5px solid #b4bcc9;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s;
 }
 
-.daycard{
-  background:var(--card);
-  border-radius:var(--radius);
-  padding:10px 12px;
-  margin-bottom:12px;
-  border:1.5px solid #b4bcc9;
-  box-shadow:0 2px 5px rgba(0,0,0,0.06);
+.daycard:hover {
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
 }
 
-/* Pills Layout: Mobile-safe */
-.pill-row{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  align-items:center;
+.daycard.samstag,
+.daycard.sonntag {
+  background: #fff3cc;
+  border: 1.5px solid #e5aa00;
+  box-shadow: inset 0 0 0 3px #ffd566, 0 3px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-/* Basis-Pill */
-.pill{
-  height:var(--pill-h);
-  border-radius:999px;
-  padding:0 var(--pill-pad-x);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:0.85rem;
-  font-weight:700;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  border:1px solid var(--line);
-  background:#f1f4f9;
+.daycard.samstag .header-row,
+.daycard.sonntag .header-row {
+  background: #ffedb0;
+  padding: 4px 0;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #e5aa00;
 }
 
-/* Erste Zeile (fix & passt) */
-.pill-date{
-  width:98px;
-  background:var(--date-bg);
-  border-color:var(--date-bd);
-  color:var(--date-tx);
+.daycard.samstag .prominent-date,
+.daycard.sonntag .prominent-date {
+  color: #8c5a00;
+  font-weight: 700;
 }
 
-.pill-day{
-  width:88px;
-  background:var(--day-bg);
-  border-color:var(--day-bd);
-  color:var(--day-tx);
+.daycard.samstag .weekday,
+.daycard.sonntag .weekday {
+  color: #7a4e00;
+  font-weight: 700;
 }
 
-.pill-time{
-  width:70px;
-  background:var(--time-bg);
-  border-color:var(--time-bd);
-  color:var(--time-tx);
-  font-variant-numeric:tabular-nums;
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: nowrap;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #2a2a2a;
+  padding: 4px 0;
+  margin-bottom: 6px;
 }
 
-/* Zweite Zeile: Tour IMMER voll (damit Handy sauber bleibt) */
-.pill-tour{
-  flex:0 0 100%;
-  width:100%;
-  background:var(--tour-bg);
-  border-color:var(--tour-bd);
-  color:var(--tour-tx);
+.weekday {
+  color: #5e8f64;
+  font-weight: 600;
+  margin-left: 8px;
 }
 
-/* Kleineres Handy-Tuning */
-@media (max-width: 390px){
-  :root{ --pill-h:26px; }
-  .pill-row{ gap:6px; }
-  .pill{ font-size:0.80rem; }
-  .pill-date{ width:92px; }
-  .pill-day{ width:82px; }
-  .pill-time{ width:64px; }
+.prominent-date {
+  color: #bb4444;
+  font-weight: 600;
+}
+
+.info {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.85rem;
+  padding-top: 4px;
+}
+
+.info-block {
+  flex: 1 1 48%;
+  background: #f4f6fb;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #9ca7bc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: row;
+  gap: 6px;
+}
+
+.label {
+  font-weight: 600;
+  color: #555;
+  font-size: 0.8rem;
+  margin-bottom: 0;
+}
+
+.value {
+  font-weight: 600;
+  color: #222;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 440px) {
+  .header-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .info {
+    flex-direction: column;
+  }
 }
 """
+
+# Der restliche Code (Excel-Verarbeitung + generate_html-Aufruf) bleibt wie gehabt und verwendet jetzt das neue Design.
+
 
 # Streamlit UI für Mehrfach-Upload
 st.set_page_config(page_title="Touren-Export", layout="centered")
@@ -362,6 +385,8 @@ if uploaded_files:
                         filename_part = sonder_dateien.get((n_clean, v_clean), nachname.replace(" ", "_"))
                         filename = f"KW{kw:02d}_{filename_part}.html"
 
+                        
+
                         html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
 
                         folder_name = f"KW{kw:02d}"
@@ -392,3 +417,5 @@ if uploaded_files:
 
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten: {e}")
+
+
