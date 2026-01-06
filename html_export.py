@@ -89,25 +89,28 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     for eintrag in eintraege:
         date_text, content = eintrag.split(": ", 1)
         date_obj = pd.to_datetime(date_text.split(" ")[0], format="%d.%m.%Y")
-        weekday = date_text.split("(")[-1].replace(")", "")
+        weekday = date_text.split("(")[-1].replace(")", "").strip()
 
-        if "–" in content:
-            uhrzeit, tour = [x.strip() for x in content.split("–", 1)]
+        content = (content or "").strip()
+
+        # robust: keine leeren Pills mehr
+        if content in ["–", "-", "—", ""]:
+            uhrzeit, tour = "–", "–"
         else:
-            uhrzeit, tour = "–", content.strip()
+            if "–" in content:
+                left, right = [x.strip() for x in content.split("–", 1)]
+                uhrzeit = left if left else "–"
+                tour = right if right else "–"
+            else:
+                uhrzeit, tour = "–", content
 
         html += f"""
   <div class="daycard">
-    <div class="header-row">
-      <div class="pill-row left">
-        <div class="pill pill-date" title="{date_obj.strftime('%d.%m.%Y')}">{date_obj.strftime('%d.%m.%Y')}</div>
-      </div>
-
-      <div class="pill-row right">
-        <div class="pill pill-day" title="{weekday}">{weekday}</div>
-        <div class="pill pill-time" title="{uhrzeit}">{uhrzeit}</div>
-        <div class="pill pill-tour" title="{tour}">{tour}</div>
-      </div>
+    <div class="pill-row">
+      <div class="pill pill-date" title="{date_obj.strftime('%d.%m.%Y')}">{date_obj.strftime('%d.%m.%Y')}</div>
+      <div class="pill pill-day" title="{weekday}">{weekday}</div>
+      <div class="pill pill-time" title="{uhrzeit}">{uhrzeit}</div>
+      <div class="pill pill-tour" title="{tour}">{tour}</div>
     </div>
   </div>"""
 
@@ -123,199 +126,143 @@ css_styles = """
   --line:#c9d1de;
   --shadow:0 2px 8px rgba(0,0,0,0.06);
 
-  --pill-h:26px;
+  --radius:12px;
+
+  --pill-h:28px;
   --pill-pad-x:10px;
 
-  /* DEUTLICHERE Farben */
-  --date-bg:#fde2e2;
-  --date-bd:#e11d48;
-  --date-tx:#7f1d1d;
-
-  --day-bg:#d1fae5;
-  --day-bd:#10b981;
-  --day-tx:#065f46;
-
-  --time-bg:#dbeafe;
-  --time-bd:#3b82f6;
-  --time-tx:#1e3a8a;
-
-  --tour-bg:#e5e7eb;
-  --tour-bd:#4b5563;
-  --tour-tx:#111827;
+  /* kräftiger, aber clean */
+  --date-bg:#ffe4e6; --date-bd:#fb7185; --date-tx:#9f1239;
+  --day-bg:#d1fae5;  --day-bd:#10b981;  --day-tx:#065f46;
+  --time-bg:#dbeafe; --time-bd:#3b82f6; --time-tx:#1e3a8a;
+  --tour-bg:#e5e7eb; --tour-bd:#4b5563; --tour-tx:#111827;
 }
 
 *{box-sizing:border-box}
 
-body {
-  margin: 0;
-  padding: 0;
-  background: var(--bg);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: var(--text);
-  font-size: 14px;
+body{
+  margin:0;
+  padding:0;
+  background:var(--bg);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  color:var(--text);
+  font-size:14px;
 }
 
-.container-outer {
-  max-width: 500px;
-  margin: 20px auto;
-  padding: 0 12px;
+.container-outer{
+  max-width:500px;
+  margin:20px auto;
+  padding:0 12px;
 }
 
-.headline-block {
-  text-align: center;
-  margin-bottom: 16px;
+.headline-block{
+  text-align:center;
+  margin-bottom:16px;
 }
 
-.headline-kw-box {
-  background: #eef2f9;
-  border-radius: 12px;
-  padding: 8px 14px;
-  border: 2px solid #a8b4cc;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+.headline-kw-box{
+  background:#eef2f9;
+  border-radius:12px;
+  padding:8px 14px;
+  border:2px solid #a8b4cc;
+  box-shadow:0 2px 5px rgba(0,0,0,0.05);
 }
 
-.headline-kw {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #1b3a7a;
-  margin-bottom: 2px;
+.headline-kw{
+  font-size:1.3rem;
+  font-weight:700;
+  color:#1b3a7a;
+  margin-bottom:2px;
 }
 
-.headline-period {
-  font-size: 0.85rem;
-  color: #3e567f;
+.headline-period{
+  font-size:0.85rem;
+  color:#3e567f;
 }
 
-.headline-name {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #1a3662;
-  margin-top: 2px;
+.headline-name{
+  font-size:0.95rem;
+  font-weight:600;
+  color:#1a3662;
+  margin-top:2px;
 }
 
-.daycard {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  border: 1.5px solid #b4bcc9;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
-  transition: box-shadow 0.2s;
+.daycard{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:10px 12px;
+  margin-bottom:12px;
+  border:1.5px solid #b4bcc9;
+  box-shadow:0 2px 5px rgba(0,0,0,0.06);
 }
 
-.daycard:hover {
-  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-}
-
-/* kein Gelb mehr, aber Klassen bleiben unschädlich */
-.daycard.samstag,
-.daycard.sonntag {
-  background: #ffffff;
-  border: 1.5px solid #b4bcc9;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #2a2a2a;
-  padding: 4px 0;
-  margin-bottom: 0;
-}
-
-/* Pills */
+/* Pills Layout: Mobile-safe */
 .pill-row{
   display:flex;
-  gap:8px;
   flex-wrap:wrap;
+  gap:8px;
   align-items:center;
 }
 
-.pill-row.left{
-  justify-content:flex-start;
-}
-
-.pill-row.right{
-  flex:1 1 260px;
-  justify-content:flex-end;
-}
-
+/* Basis-Pill */
 .pill{
-  height: var(--pill-h);
-  border-radius: 999px;
-  padding: 0 var(--pill-pad-x);
+  height:var(--pill-h);
+  border-radius:999px;
+  padding:0 var(--pill-pad-x);
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size: 0.82rem;
-  font-weight: 700;
-  white-space: nowrap;
+  font-size:0.85rem;
+  font-weight:700;
+  white-space:nowrap;
   overflow:hidden;
-  text-overflow: ellipsis;
-  border: 1px solid var(--line);
-  background: #f1f4f9;
+  text-overflow:ellipsis;
+  border:1px solid var(--line);
+  background:#f1f4f9;
 }
 
-/* Datum */
+/* Erste Zeile (fix & passt) */
 .pill-date{
-  background: var(--date-bg);
-  border-color: var(--date-bd);
-  color: var(--date-tx);
+  width:98px;
+  background:var(--date-bg);
+  border-color:var(--date-bd);
+  color:var(--date-tx);
 }
 
-/* Tag */
 .pill-day{
-  width: 88px;
-  background: var(--day-bg);
-  border-color: var(--day-bd);
-  color: var(--day-tx);
+  width:88px;
+  background:var(--day-bg);
+  border-color:var(--day-bd);
+  color:var(--day-tx);
 }
 
-/* Uhrzeit */
 .pill-time{
-  width: 70px;
-  background: var(--time-bg);
-  border-color: var(--time-bd);
-  color: var(--time-tx);
-  font-variant-numeric: tabular-nums;
+  width:70px;
+  background:var(--time-bg);
+  border-color:var(--time-bd);
+  color:var(--time-tx);
+  font-variant-numeric:tabular-nums;
 }
 
-/* Tour */
+/* Zweite Zeile: Tour IMMER voll (damit Handy sauber bleibt) */
 .pill-tour{
-  flex: 1 1 160px;
-  min-width: 140px;
-  background: var(--tour-bg);
-  border-color: var(--tour-bd);
-  color: var(--tour-tx);
+  flex:0 0 100%;
+  width:100%;
+  background:var(--tour-bg);
+  border-color:var(--tour-bd);
+  color:var(--tour-tx);
 }
 
-/* alte Bereiche deaktiviert (damit nix "voluminös" wirkt) */
-.weekday,
-.prominent-date,
-.info {
-  display: none !important;
-}
-
-@media (max-width: 440px) {
-  .pill-row.right{
-    justify-content:flex-start;
-    flex: 1 1 100%;
-  }
-  .pill-tour{
-    flex: 1 1 100%;
-    min-width: 100%;
-  }
+/* Kleineres Handy-Tuning */
+@media (max-width: 390px){
+  :root{ --pill-h:26px; }
+  .pill-row{ gap:6px; }
+  .pill{ font-size:0.80rem; }
+  .pill-date{ width:92px; }
+  .pill-day{ width:82px; }
+  .pill-time{ width:64px; }
 }
 """
-
-# Der restliche Code (Excel-Verarbeitung + generate_html-Aufruf) bleibt wie gehabt und verwendet jetzt das neue Design.
 
 # Streamlit UI für Mehrfach-Upload
 st.set_page_config(page_title="Touren-Export", layout="centered")
@@ -441,12 +388,7 @@ if uploaded_files:
                     upload_folder_to_ftp_with_progress(tmpdir, FTP_BASE_DIR)
 
             st.success(f"{len(uploaded_files)} Dateien verarbeitet.")
-            st.download_button(
-                "ZIP mit allen HTML-Dateien herunterladen",
-                data=zip_bytes,
-                file_name="gesamt_export.zip",
-                mime="application/zip"
-            )
+            st.download_button("ZIP mit allen HTML-Dateien herunterladen", data=zip_bytes, file_name="gesamt_export.zip", mime="application/zip")
 
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten: {e}")
