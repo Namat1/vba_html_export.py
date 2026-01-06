@@ -102,7 +102,6 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         elif weekday == "Sonntag":
             card_class += " sonntag"
 
-        # optionaler "leer"-State (wenn du willst)
         empty_day = (tour.strip() == "–" and uhrzeit.strip() == "–")
         empty_class = " is-empty" if empty_day else ""
 
@@ -111,7 +110,7 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     <div class="header-row">
       <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
 
-      <div class="pill pill-day">
+      <div class="pill pill-day" title="{weekday}">
         <div class="pill-label">TAG</div>
         <div class="pill-value">{weekday}</div>
       </div>
@@ -123,8 +122,8 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         <span class="value">{tour}</span>
       </div>
 
-      <div class="pill pill-time">
-        <div class="pill-label">UHRZEIT</div>
+      <div class="pill pill-time" title="{uhrzeit}">
+        <div class="pill-label">UHR</div>
         <div class="pill-value">{uhrzeit}</div>
       </div>
     </div>
@@ -137,12 +136,12 @@ css_styles = """
 :root{
   --bg:#f5f7fa;
   --text:#1d1d1f;
-  --muted:#5f6b7a;
+  --muted:#647083;
 
   --card:#ffffff;
   --line:#b4bcc9;
 
-  --good:#5e8f64;
+  --good:#4b7a52;
   --good-bg:#e9f6ef;
   --good-line:#cbe8d6;
 
@@ -156,6 +155,8 @@ css_styles = """
   --radius:12px;
 }
 
+*{box-sizing:border-box}
+
 body{
   margin:0;
   padding:0;
@@ -167,13 +168,13 @@ body{
 
 .container-outer{
   max-width:500px;
-  margin:20px auto;
+  margin:18px auto;
   padding:0 12px;
 }
 
 .headline-block{
   text-align:center;
-  margin-bottom:16px;
+  margin-bottom:12px;
 }
 
 .headline-kw-box{
@@ -185,20 +186,20 @@ body{
 }
 
 .headline-kw{
-  font-size:1.3rem;
-  font-weight:700;
+  font-size:1.25rem;
+  font-weight:800;
   color:#1b3a7a;
   margin-bottom:2px;
 }
 
 .headline-period{
-  font-size:0.85rem;
+  font-size:0.83rem;
   color:#3e567f;
 }
 
 .headline-name{
-  font-size:0.95rem;
-  font-weight:600;
+  font-size:0.93rem;
+  font-weight:700;
   color:#1a3662;
   margin-top:2px;
 }
@@ -207,8 +208,8 @@ body{
 .daycard{
   background:var(--card);
   border-radius:var(--radius);
-  padding:8px 12px;
-  margin-bottom:12px;
+  padding:8px 10px;
+  margin-bottom:10px;
   border:1.5px solid var(--line);
   box-shadow:var(--shadow);
   transition:box-shadow .2s;
@@ -223,16 +224,15 @@ body{
 .daycard.sonntag{
   background:#fff3cc;
   border:1.5px solid #e5aa00;
-  box-shadow: inset 0 0 0 3px #ffd566, var(--shadow);
-  border-radius:var(--radius);
+  box-shadow: inset 0 0 0 2px #ffd566, var(--shadow);
   overflow:hidden;
 }
 
 .daycard.samstag .header-row,
 .daycard.sonntag .header-row{
   background:#ffedb0;
-  padding:6px 8px;
-  margin:-8px -12px 8px -12px; /* header voll breit im card */
+  padding:4px 6px;
+  margin:-8px -10px 6px -10px;
   border-bottom:1px solid #e5aa00;
 }
 
@@ -243,10 +243,10 @@ body{
   align-items:center;
   gap:8px;
   flex-wrap:nowrap;
-  font-weight:600;
+  font-weight:700;
   font-size:0.9rem;
   color:#2a2a2a;
-  padding:4px 0;
+  padding:2px 0;
   margin-bottom:6px;
 }
 
@@ -263,40 +263,43 @@ body{
   flex-wrap:wrap;
   gap:8px;
   font-size:0.85rem;
-  padding-top:4px;
 }
 
+/* Tour Box kompakt */
 .info-block{
-  flex:1 1 calc(100% - 128px); /* Platz für große Pill rechts */
+  flex:1 1 calc(100% - 104px); /* Platz für Pill */
   background:#f4f6fb;
   padding:6px 8px;
-  border-radius:6px;
+  border-radius:8px;
   border:1px solid #9ca7bc;
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:8px;
-  min-height:44px;
+  min-height:34px;
 }
 
 .label{
   font-weight:700;
   color:#555;
-  font-size:0.8rem;
+  font-size:0.78rem;
   white-space:nowrap;
 }
 
 .value{
-  font-weight:700;
+  font-weight:800;
   color:#222;
-  font-size:0.85rem;
+  font-size:0.84rem;
   text-align:right;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 
-/* ===== Große Pills (unterteilt) ===== */
+/* ===== Pills kompakt (unterteilt) ===== */
 .pill{
-  width:118px;     /* alle gleich breit */
-  height:44px;     /* alle gleich hoch */
+  width:96px;      /* alle gleich breit */
+  height:34px;     /* kompakt */
 
   display:flex;
   flex-direction:column;
@@ -308,12 +311,12 @@ body{
   background:#f5f7fb;
 
   text-align:center;
-  line-height:1.05;
+  line-height:1.0;
   user-select:none;
 }
 
 .pill-label{
-  font-size:0.62rem;
+  font-size:0.58rem;
   font-weight:900;
   letter-spacing:0.08em;
   color:var(--muted);
@@ -321,14 +324,14 @@ body{
 }
 
 .pill-value{
-  margin-top:2px;
-  font-size:0.82rem;
+  margin-top:1px;
+  font-size:0.80rem;
   font-weight:950;
   color:var(--text);
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  max-width:104px;
+  max-width:86px;
 }
 
 /* Tag-Pill */
@@ -337,6 +340,7 @@ body{
   border-color:var(--good-line);
 }
 
+/* Wochenende Tag-Pill */
 .daycard.samstag .pill-day,
 .daycard.sonntag .pill-day{
   background:var(--weekend-bg);
@@ -367,9 +371,6 @@ body{
   }
 }
 """
-
-# Der restliche Code (Excel-Verarbeitung + generate_html-Aufruf) bleibt wie gehabt und verwendet jetzt das neue Design.
-
 
 # Streamlit UI für Mehrfach-Upload
 st.set_page_config(page_title="Touren-Export", layout="centered")
