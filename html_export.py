@@ -25,14 +25,56 @@ wochentage_deutsch_map = {
 def get_kw(datum):
     return datum.isocalendar()[1]
 
+def upload_folder_to_ftp_with_progress(local_dir, ftp_dir):
+    ftp = FTP()
+    ftp.connect(FTP_HOST, 21)
+    ftp.login(FTP_USER, FTP_PASS)
+
+    all_files = []
+    for root, _, files in os.walk(local_dir):
+        for file in files:
+            rel_dir = os.path.relpath(root, local_dir)
+            all_files.append((os.path.join(root, file), os.path.join(ftp_dir, rel_dir, file)))
+
+    total = len(all_files)
+    uploaded = 0
+
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    for local_path, remote_path in all_files:
+        remote_dir = os.path.dirname(remote_path).replace("\\", "/")
+
+        parts = remote_dir.split("/")
+        path_built = ""
+        for part in parts:
+            if part:
+                path_built += "/" + part
+                try:
+                    ftp.mkd(path_built)
+                except:
+                    pass
+
+        with open(local_path, "rb") as f:
+            ftp.cwd(remote_dir)
+            ftp.storbinary(f"STOR {os.path.basename(local_path)}", f)
+
+        uploaded += 1
+        progress = uploaded / total
+        progress_bar.progress(progress)
+        status_text.info(f"Hochgeladen: {uploaded}/{total} – {os.path.basename(local_path)}")
+
+    ftp.quit()
+    status_text.success("Alle Dateien erfolgreich hochgeladen.")
+
 def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     html = f"""<!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KW{kw} – {fahrer_name}</title>
-<style>{css_styles}</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KW{kw} – {fahrer_name}</title>
+  <style>{css_styles}</style>
 </head>
 <body>
 <div class="container-outer">
@@ -58,13 +100,13 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
   <div class="daycard">
     <div class="header-row">
       <div class="pill-row left">
-        <div class="pill pill-date">{date_obj.strftime('%d.%m.%Y')}</div>
+        <div class="pill pill-date" title="{date_obj.strftime('%d.%m.%Y')}">{date_obj.strftime('%d.%m.%Y')}</div>
       </div>
 
       <div class="pill-row right">
-        <div class="pill pill-day">{weekday}</div>
-        <div class="pill pill-time">{uhrzeit}</div>
-        <div class="pill pill-tour">{tour}</div>
+        <div class="pill pill-day" title="{weekday}">{weekday}</div>
+        <div class="pill pill-time" title="{uhrzeit}">{uhrzeit}</div>
+        <div class="pill pill-tour" title="{tour}">{tour}</div>
       </div>
     </div>
   </div>"""
@@ -84,17 +126,17 @@ css_styles = """
   --pill-h:26px;
   --pill-pad-x:10px;
 
-  /* Farben */
-  --date-bg:#fdecec;
-  --date-bd:#e08b8b;
-  --date-tx:#8b2c2c;
+  /* DEUTLICHERE Farben */
+  --date-bg:#fde2e2;
+  --date-bd:#e11d48;
+  --date-tx:#7f1d1d;
 
-  --day-bg:#dff3ea;
-  --day-bd:#3fa37a;
-  --day-tx:#145c43;
+  --day-bg:#d1fae5;
+  --day-bd:#10b981;
+  --day-tx:#065f46;
 
-  --time-bg:#e3efff;
-  --time-bd:#4c7fd9;
+  --time-bg:#dbeafe;
+  --time-bd:#3b82f6;
   --time-tx:#1e3a8a;
 
   --tour-bg:#e5e7eb;
@@ -104,49 +146,88 @@ css_styles = """
 
 *{box-sizing:border-box}
 
-body{
-  margin:0;
-  background:var(--bg);
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-  color:var(--text);
-  font-size:14px;
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text);
+  font-size: 14px;
 }
 
-.container-outer{
-  max-width:500px;
-  margin:20px auto;
-  padding:0 12px;
+.container-outer {
+  max-width: 500px;
+  margin: 20px auto;
+  padding: 0 12px;
 }
 
-.headline-block{text-align:center;margin-bottom:14px;}
-
-.headline-kw-box{
-  background:#fff;
-  border-radius:12px;
-  padding:10px 14px;
-  border:1px solid var(--line);
-  box-shadow:var(--shadow);
+.headline-block {
+  text-align: center;
+  margin-bottom: 16px;
 }
 
-.headline-kw{font-size:1.25rem;font-weight:800;color:#1b3a7a;}
-.headline-period{font-size:.85rem;color:var(--muted);}
-.headline-name{font-size:.95rem;font-weight:800;color:#1a3662;margin-top:4px;}
-
-.daycard{
-  background:var(--card);
-  border-radius:12px;
-  padding:8px 12px;
-  margin-bottom:10px;
-  border:1px solid var(--line);
-  box-shadow:var(--shadow);
+.headline-kw-box {
+  background: #eef2f9;
+  border-radius: 12px;
+  padding: 8px 14px;
+  border: 2px solid #a8b4cc;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-.header-row{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  flex-wrap:wrap;
-  align-items:flex-start;
+.headline-kw {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1b3a7a;
+  margin-bottom: 2px;
+}
+
+.headline-period {
+  font-size: 0.85rem;
+  color: #3e567f;
+}
+
+.headline-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a3662;
+  margin-top: 2px;
+}
+
+.daycard {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border: 1.5px solid #b4bcc9;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s;
+}
+
+.daycard:hover {
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+/* kein Gelb mehr, aber Klassen bleiben unschädlich */
+.daycard.samstag,
+.daycard.sonntag {
+  background: #ffffff;
+  border: 1.5px solid #b4bcc9;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #2a2a2a;
+  padding: 4px 0;
+  margin-bottom: 0;
 }
 
 /* Pills */
@@ -157,73 +238,90 @@ body{
   align-items:center;
 }
 
+.pill-row.left{
+  justify-content:flex-start;
+}
+
 .pill-row.right{
   flex:1 1 260px;
   justify-content:flex-end;
 }
 
 .pill{
-  height:var(--pill-h);
-  border-radius:999px;
-  padding:0 var(--pill-pad-x);
+  height: var(--pill-h);
+  border-radius: 999px;
+  padding: 0 var(--pill-pad-x);
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:.82rem;
-  font-weight:700;
-  white-space:nowrap;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
   overflow:hidden;
-  text-overflow:ellipsis;
+  text-overflow: ellipsis;
+  border: 1px solid var(--line);
+  background: #f1f4f9;
 }
 
 /* Datum */
 .pill-date{
-  background:var(--date-bg);
-  border:1px solid var(--date-bd);
-  color:var(--date-tx);
+  background: var(--date-bg);
+  border-color: var(--date-bd);
+  color: var(--date-tx);
 }
 
 /* Tag */
 .pill-day{
-  width:88px;
-  background:var(--day-bg);
-  border:1px solid var(--day-bd);
-  color:var(--day-tx);
+  width: 88px;
+  background: var(--day-bg);
+  border-color: var(--day-bd);
+  color: var(--day-tx);
 }
 
 /* Uhrzeit */
 .pill-time{
-  width:70px;
-  background:var(--time-bg);
-  border:1px solid var(--time-bd);
-  color:var(--time-tx);
-  font-variant-numeric:tabular-nums;
+  width: 70px;
+  background: var(--time-bg);
+  border-color: var(--time-bd);
+  color: var(--time-tx);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Tour */
 .pill-tour{
-  flex:1 1 160px;
-  min-width:140px;
-  background:var(--tour-bg);
-  border:1px solid var(--tour-bd);
-  color:var(--tour-tx);
+  flex: 1 1 160px;
+  min-width: 140px;
+  background: var(--tour-bg);
+  border-color: var(--tour-bd);
+  color: var(--tour-tx);
 }
 
-@media(max-width:440px){
-  .pill-row.right{justify-content:flex-start;}
-  .pill-tour{flex:1 1 100%;min-width:100%;}
+/* alte Bereiche deaktiviert (damit nix "voluminös" wirkt) */
+.weekday,
+.prominent-date,
+.info {
+  display: none !important;
+}
+
+@media (max-width: 440px) {
+  .pill-row.right{
+    justify-content:flex-start;
+    flex: 1 1 100%;
+  }
+  .pill-tour{
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
 }
 """
 
-# Streamlit UI
+# Der restliche Code (Excel-Verarbeitung + generate_html-Aufruf) bleibt wie gehabt und verwendet jetzt das neue Design.
+
+# Streamlit UI für Mehrfach-Upload
 st.set_page_config(page_title="Touren-Export", layout="centered")
 st.title("Dienstplan aktualisieren")
 
-uploaded_files = st.file_uploader(
-    "Excel-Dateien hochladen (Blatt 'Touren')",
-    type=["xlsx"],
-    accept_multiple_files=True
-)
+uploaded_files = st.file_uploader("Excel-Dateien hochladen (Blatt 'Touren')", type=["xlsx"], accept_multiple_files=True)
 
 if uploaded_files:
     try:
@@ -231,67 +329,124 @@ if uploaded_files:
             zip_path = os.path.join(tmpdir, "gesamt_export.zip")
             with ZipFile(zip_path, "w") as zipf:
 
-                for file in uploaded_files:
-                    df = pd.read_excel(file, sheet_name="Touren", skiprows=4)
-                    fahrer_dict = {}
+                ausschluss_stichwoerter = ["zippel", "insel", "paasch", "meyer", "ihde", "devies", "insellogistik"]
 
+                for file in uploaded_files:
+                    df = pd.read_excel(file, sheet_name="Touren", skiprows=4, engine="openpyxl")
+
+                    fahrer_dict = {}
                     for _, row in df.iterrows():
                         datum = row.iloc[14]
                         tour = row.iloc[15]
                         uhrzeit = row.iloc[8]
+
                         if pd.isna(datum):
                             continue
-                        datum_dt = pd.to_datetime(datum, errors="coerce")
-                        if pd.isna(datum_dt):
+                        try:
+                            datum_dt = pd.to_datetime(datum)
+                        except:
                             continue
 
                         if pd.isna(uhrzeit):
                             uhrzeit_str = "–"
+                        elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0:
+                            uhrzeit_str = "00:00"
                         elif isinstance(uhrzeit, datetime):
                             uhrzeit_str = uhrzeit.strftime("%H:%M")
                         else:
-                            uhrzeit_str = str(uhrzeit)[:5]
+                            try:
+                                uhrzeit_parsed = pd.to_datetime(uhrzeit)
+                                uhrzeit_str = uhrzeit_parsed.strftime("%H:%M")
+                            except:
+                                uhrzeit_str = str(uhrzeit).strip()
+                                if ":" in uhrzeit_str:
+                                    uhrzeit_str = ":".join(uhrzeit_str.split(":")[:2])
 
-                        eintrag = f"{uhrzeit_str} – {str(tour).strip()}"
+                        eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
 
-                        for pos in [(3,4),(6,7)]:
-                            n = row.iloc[pos[0]]
-                            v = row.iloc[pos[1]]
-                            if pd.notna(n) or pd.notna(v):
-                                name = f"{str(n).title()}, {str(v).title()}"
-                                fahrer_dict.setdefault(name, {}).setdefault(datum_dt.date(), [])
-                                if eintrag not in fahrer_dict[name][datum_dt.date()]:
-                                    fahrer_dict[name][datum_dt.date()].append(eintrag)
+                        for pos in [(3, 4), (6, 7)]:
+                            nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
+                            vorname = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
+                            if nachname or vorname:
+                                fahrer_name = f"{nachname}, {vorname}"
+                                if fahrer_name not in fahrer_dict:
+                                    fahrer_dict[fahrer_name] = {}
+                                if datum_dt.date() not in fahrer_dict[fahrer_name]:
+                                    fahrer_dict[fahrer_name][datum_dt.date()] = []
+                                if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
+                                    fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
 
-                    for name, tage in fahrer_dict.items():
-                        start = min(tage)
-                        start_sonntag = start - pd.Timedelta(days=(start.weekday()+1) % 7)
+                    for fahrer_name, eintraege in fahrer_dict.items():
+                        if not eintraege:
+                            continue
+
+                        start_datum = min(eintraege.keys())
+                        start_sonntag = start_datum - pd.Timedelta(days=(start_datum.weekday() + 1) % 7)
                         kw = get_kw(start_sonntag) + 1
 
-                        eintraege = []
+                        wochen_eintraege = []
                         for i in range(7):
-                            d = start_sonntag + pd.Timedelta(days=i)
-                            wt = wochentage_deutsch_map.get(d.strftime("%A"), d.strftime("%A"))
-                            if d in tage:
-                                for e in tage[d]:
-                                    eintraege.append(f"{d.strftime('%d.%m.%Y')} ({wt}): {e}")
+                            tag_datum = start_sonntag + pd.Timedelta(days=i)
+                            wochentag = wochentage_deutsch_map.get(tag_datum.strftime("%A"), tag_datum.strftime("%A"))
+                            if tag_datum in eintraege:
+                                for eintrag in eintraege[tag_datum]:
+                                    wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): {eintrag}")
                             else:
-                                eintraege.append(f"{d.strftime('%d.%m.%Y')} ({wt}): –")
+                                wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
 
-                        filename = f"KW{kw:02d}_{name.split(',')[0]}.html"
-                        html = generate_html(name, eintraege, kw, start_sonntag, css_styles)
+                        try:
+                            nachname, vorname = [s.strip() for s in fahrer_name.split(",")]
+                        except ValueError:
+                            nachname, vorname = fahrer_name.strip(), ""
 
-                        path = os.path.join(tmpdir, f"KW{kw:02d}", filename)
-                        os.makedirs(os.path.dirname(path), exist_ok=True)
-                        with open(path, "w", encoding="utf-8") as f:
-                            f.write(html)
-                        zipf.write(path, arcname=os.path.join(f"KW{kw:02d}", filename))
+                        sonder_dateien = {
+                            ("fechner", "klaus"): "KFechner",
+                            ("fechner", "danny"): "Fechner",
+                            ("scheil", "rene"): "RScheil",
+                            ("scheil", "eric"): "Scheil",
+                            ("schulz", "julian"): "Schulz",
+                            ("schulz", "stephan"): "STSchulz",
+                            ("lewandowski", "kamil"): "Lewandowski",
+                            ("lewandowski", "dominik"): "DLewandowski",
+                        }
 
+                        n_clean = nachname.strip().lower()
+                        v_clean = vorname.strip().lower()
+                        filename_part = sonder_dateien.get((n_clean, v_clean), nachname.replace(" ", "_"))
+                        filename = f"KW{kw:02d}_{filename_part}.html"
+
+                        html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
+
+                        folder_name = f"KW{kw:02d}"
+                        full_path = os.path.join(tmpdir, folder_name, filename)
+                        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                        with open(full_path, "w", encoding="utf-8") as f:
+                            f.write(html_code)
+
+                        filename_lower = filename.lower()
+                        if "ch._holtz" in filename_lower or any(stichwort in filename_lower for stichwort in ausschluss_stichwoerter):
+                            os.remove(full_path)
+                            continue
+
+                        zipf.write(full_path, arcname=os.path.join(folder_name, filename))
+
+            with open(zip_path, "rb") as f:
+                zip_bytes = f.read()
+
+            if st.checkbox("Automatisch auf FTP hochladen", value=False):
+                if not all([FTP_HOST, FTP_USER, FTP_PASS]):
+                    st.warning("FTP-Zugangsdaten fehlen in .env")
+                else:
+                    st.info("Starte FTP-Upload...")
+                    upload_folder_to_ftp_with_progress(tmpdir, FTP_BASE_DIR)
+
+            st.success(f"{len(uploaded_files)} Dateien verarbeitet.")
             st.download_button(
                 "ZIP mit allen HTML-Dateien herunterladen",
-                open(zip_path, "rb").read(),
-                "gesamt_export.zip",
-                "application/zip"
+                data=zip_bytes,
+                file_name="gesamt_export.zip",
+                mime="application/zip"
             )
+
     except Exception as e:
-        st.error(f"Fehler: {e}")
+        st.error(f"Fehler beim Verarbeiten: {e}")
