@@ -1,7 +1,6 @@
 # Erweiterungen oben ergänzen
 import streamlit as st
 import pandas as pd
-from io import BytesIO
 from zipfile import ZipFile
 from datetime import datetime
 import tempfile
@@ -19,7 +18,8 @@ FTP_BASE_DIR = os.getenv("FTP_BASE_DIR", "/")
 # Deutsche Wochentage
 wochentage_deutsch_map = {
     "Monday": "Montag", "Tuesday": "Dienstag", "Wednesday": "Mittwoch",
-    "Thursday": "Donnerstag", "Friday": "Freitag", "Saturday": "Samstag", "Sunday": "Sonntag"
+    "Thursday": "Donnerstag", "Friday": "Freitag",
+    "Saturday": "Samstag", "Sunday": "Sonntag"
 }
 
 def get_kw(datum):
@@ -36,22 +36,18 @@ def upload_folder_to_ftp_with_progress(local_dir, ftp_dir):
             rel_dir = os.path.relpath(root, local_dir)
             all_files.append((os.path.join(root, file), os.path.join(ftp_dir, rel_dir, file)))
 
-    total = len(all_files)
-    uploaded = 0
-
     progress_bar = st.progress(0)
     status_text = st.empty()
 
-    for local_path, remote_path in all_files:
+    for i, (local_path, remote_path) in enumerate(all_files, start=1):
         remote_dir = os.path.dirname(remote_path).replace("\\", "/")
 
-        parts = remote_dir.split("/")
-        path_built = ""
-        for part in parts:
+        path = ""
+        for part in remote_dir.split("/"):
             if part:
-                path_built += "/" + part
+                path += "/" + part
                 try:
-                    ftp.mkd(path_built)
+                    ftp.mkd(path)
                 except:
                     pass
 
@@ -59,38 +55,36 @@ def upload_folder_to_ftp_with_progress(local_dir, ftp_dir):
             ftp.cwd(remote_dir)
             ftp.storbinary(f"STOR {os.path.basename(local_path)}", f)
 
-        uploaded += 1
-        progress = uploaded / total
-        progress_bar.progress(progress)
-        status_text.info(f"Hochgeladen: {uploaded}/{total} – {os.path.basename(local_path)}")
+        progress_bar.progress(i / len(all_files))
+        status_text.info(f"Hochgeladen: {i}/{len(all_files)} – {os.path.basename(local_path)}")
 
     ftp.quit()
     status_text.success("Alle Dateien erfolgreich hochgeladen.")
 
 # ==========================
-# MODERNES HTML (HELL)
+# HTML Generator
 # ==========================
 def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     html = f"""<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KW{kw} – {fahrer_name}</title>
-  <style>{css_styles}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KW{kw} – {fahrer_name}</title>
+<style>{css_styles}</style>
 </head>
 <body>
 <div class="container-outer">
 
-  <div class="headline-block">
-    <div class="headline-kw-box">
-      <div class="headline-top">
-        <div class="headline-kw">KW {kw}</div>
-        <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
-      </div>
-      <div class="headline-name">{fahrer_name}</div>
+<div class="headline-block">
+  <div class="headline-kw-box">
+    <div class="headline-top">
+      <div class="headline-kw">KW {kw}</div>
+      <div class="headline-period">{start_date.strftime('%d.%m.%Y')} – {(start_date + pd.Timedelta(days=6)).strftime('%d.%m.%Y')}</div>
     </div>
+    <div class="headline-name">{fahrer_name}</div>
   </div>
+</div>
 """
 
     for eintrag in eintraege:
@@ -109,25 +103,24 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
         elif weekday == "Sonntag":
             card_class += " sonntag"
 
-        empty_day = (tour.strip() == "–" and uhrzeit.strip() == "–")
-        empty_class = " is-empty" if empty_day else ""
+        empty = (tour == "–" and uhrzeit == "–")
+        empty_class = " is-empty" if empty else ""
 
         html += f"""
-  <div class="{card_class}{empty_class}">
-    <div class="header-row">
-      <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
-      <div class="weekday-badge">{weekday}</div>
-    </div>
-
-    <div class="info">
-      <div>
-        <div class="tour-title">{tour}</div>
-        <div class="tour-sub">Tour / Aufgabe</div>
-      </div>
-
-      <div class="chip">🕒 {uhrzeit}</div>
-    </div>
+<div class="{card_class}{empty_class}">
+  <div class="header-row">
+    <div class="prominent-date">{date_obj.strftime('%d.%m.%Y')}</div>
+    <div class="weekday-badge">{weekday}</div>
   </div>
+
+  <div class="info">
+    <div>
+      <div class="tour-title">{tour}</div>
+      <div class="tour-sub">Tour / Aufgabe</div>
+    </div>
+    <div class="chip">🕒 {uhrzeit}</div>
+  </div>
+</div>
 """
 
     html += """
@@ -138,7 +131,7 @@ def generate_html(fahrer_name, eintraege, kw, start_date, css_styles):
     return html
 
 # ==========================
-# HELLES, MODERNES CSS THEME
+# HELLES CSS – PILLEN GLEICH GROSS
 # ==========================
 css_styles = """
 :root{
@@ -162,7 +155,6 @@ body{
   font-family:Inter,system-ui,sans-serif;
   color:var(--text);
   font-size:14px;
-  line-height:1.35;
 }
 
 .container-outer{
@@ -171,7 +163,7 @@ body{
   padding:0 14px;
 }
 
-/* Header sticky */
+/* Header */
 .headline-block{
   position:sticky;
   top:10px;
@@ -194,32 +186,13 @@ body{
   gap:10px;
 }
 
-.headline-kw{
-  font-weight:800;
-  font-size:1.15rem;
-}
-
-.headline-period{
-  color:var(--muted);
-  font-weight:600;
-  font-size:.85rem;
-}
+.headline-kw{font-weight:800;font-size:1.15rem}
+.headline-period{font-size:.85rem;color:var(--muted);font-weight:600}
 
 .headline-name{
   margin-top:8px;
   font-weight:800;
   color:var(--accent);
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
-.headline-name::before{
-  content:"";
-  width:9px;
-  height:9px;
-  border-radius:50%;
-  background:var(--accent);
 }
 
 /* Cards */
@@ -237,23 +210,32 @@ body{
   justify-content:space-between;
   align-items:center;
   margin-bottom:10px;
-  gap:10px;
 }
 
-.prominent-date{
-  font-weight:900;
-  font-size:.95rem;
-}
+.prominent-date{font-weight:900}
 
-.weekday-badge{
-  padding:5px 10px;
+/* ===== PILLEN (GLEICH GROSS) ===== */
+.weekday-badge,
+.chip{
+  min-width:96px;
+  height:28px;
+
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:0 10px;
   border-radius:999px;
   font-size:.78rem;
   font-weight:900;
+  white-space:nowrap;
+}
+
+/* Wochentag */
+.weekday-badge{
   background:#e9f6ef;
   color:var(--good);
   border:1px solid #cbe8d6;
-  white-space:nowrap;
 }
 
 .daycard.samstag .weekday-badge,
@@ -263,66 +245,48 @@ body{
   border-color:#f0d39a;
 }
 
+/* Uhrzeit */
+.chip{
+  border:1px solid var(--line);
+  background:#f5f7fb;
+  font-variant-numeric:tabular-nums;
+}
+
 /* Content */
 .info{
   display:grid;
   grid-template-columns:1fr auto;
   gap:10px;
-  align-items:start;
 }
 
-.tour-title{
-  font-weight:900;
-  font-size:.95rem;
-}
+.tour-title{font-weight:900}
+.tour-sub{font-size:.82rem;color:var(--muted);font-weight:700}
 
-.tour-sub{
-  margin-top:4px;
-  font-size:.82rem;
-  color:var(--muted);
-  font-weight:700;
-}
-
-.chip{
-  padding:7px 10px;
-  border-radius:999px;
-  border:1px solid var(--line);
-  background:#f5f7fb;
-  font-weight:900;
-  white-space:nowrap;
-}
-
-.is-empty .tour-title{color:var(--muted); font-weight:800;}
-.is-empty .chip{opacity:.7;}
+.is-empty .tour-title{color:var(--muted)}
+.is-empty .chip{opacity:.7}
 
 @media(max-width:420px){
-  .info{grid-template-columns:1fr;}
-  .headline-top{flex-direction:column; align-items:flex-start;}
-}
-
-/* Print */
-@media print{
-  body{ background:#fff; }
-  .headline-block{ position:static; }
-  .headline-kw-box,
-  .daycard{ box-shadow:none; }
-  .daycard{ break-inside:avoid; }
+  .info{grid-template-columns:1fr}
 }
 """
 
-# Streamlit UI für Mehrfach-Upload
+# ==========================
+# Streamlit UI
+# ==========================
 st.set_page_config(page_title="Touren-Export", layout="centered")
 st.title("Dienstplan aktualisieren")
 
-uploaded_files = st.file_uploader("Excel-Dateien hochladen (Blatt 'Touren')", type=["xlsx"], accept_multiple_files=True)
+uploaded_files = st.file_uploader(
+    "Excel-Dateien hochladen (Blatt 'Touren')",
+    type=["xlsx"],
+    accept_multiple_files=True
+)
 
 if uploaded_files:
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = os.path.join(tmpdir, "gesamt_export.zip")
             with ZipFile(zip_path, "w") as zipf:
-
-                ausschluss_stichwoerter = ["zippel", "insel", "paasch", "meyer", "ihde", "devies", "insellogistik"]
 
                 for file in uploaded_files:
                     df = pd.read_excel(file, sheet_name="Touren", skiprows=4, engine="openpyxl")
@@ -335,106 +299,56 @@ if uploaded_files:
 
                         if pd.isna(datum):
                             continue
-                        try:
-                            datum_dt = pd.to_datetime(datum)
-                        except:
-                            continue
+
+                        datum_dt = pd.to_datetime(datum)
 
                         if pd.isna(uhrzeit):
                             uhrzeit_str = "–"
-                        elif isinstance(uhrzeit, (int, float)) and uhrzeit == 0:
-                            uhrzeit_str = "00:00"
                         elif isinstance(uhrzeit, datetime):
                             uhrzeit_str = uhrzeit.strftime("%H:%M")
                         else:
-                            try:
-                                uhrzeit_parsed = pd.to_datetime(uhrzeit)
-                                uhrzeit_str = uhrzeit_parsed.strftime("%H:%M")
-                            except:
-                                uhrzeit_str = str(uhrzeit).strip()
-                                if ":" in uhrzeit_str:
-                                    uhrzeit_str = ":".join(uhrzeit_str.split(":")[:2])
+                            uhrzeit_str = str(uhrzeit)[:5]
 
-                        eintrag_text = f"{uhrzeit_str} – {str(tour).strip()}"
+                        eintrag = f"{uhrzeit_str} – {str(tour).strip()}"
 
-                        for pos in [(3, 4), (6, 7)]:
-                            nachname = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
-                            vorname = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
-                            if nachname or vorname:
-                                fahrer_name = f"{nachname}, {vorname}"
-                                if fahrer_name not in fahrer_dict:
-                                    fahrer_dict[fahrer_name] = {}
-                                if datum_dt.date() not in fahrer_dict[fahrer_name]:
-                                    fahrer_dict[fahrer_name][datum_dt.date()] = []
-                                if eintrag_text not in fahrer_dict[fahrer_name][datum_dt.date()]:
-                                    fahrer_dict[fahrer_name][datum_dt.date()].append(eintrag_text)
+                        for pos in [(3,4),(6,7)]:
+                            nn = str(row.iloc[pos[0]]).strip().title() if pd.notna(row.iloc[pos[0]]) else ""
+                            vn = str(row.iloc[pos[1]]).strip().title() if pd.notna(row.iloc[pos[1]]) else ""
+                            if nn:
+                                name = f"{nn}, {vn}"
+                                fahrer_dict.setdefault(name, {}).setdefault(datum_dt.date(), []).append(eintrag)
 
-                    for fahrer_name, eintraege in fahrer_dict.items():
-                        if not eintraege:
-                            continue
-
-                        start_datum = min(eintraege.keys())
-                        start_sonntag = start_datum - pd.Timedelta(days=(start_datum.weekday() + 1) % 7)
-                        kw = get_kw(start_sonntag) + 1
+                    for fahrer, daten in fahrer_dict.items():
+                        start = min(daten.keys())
+                        sonntag = start - pd.Timedelta(days=(start.weekday()+1)%7)
+                        kw = get_kw(sonntag) + 1
 
                         wochen_eintraege = []
                         for i in range(7):
-                            tag_datum = start_sonntag + pd.Timedelta(days=i)
-                            wochentag = wochentage_deutsch_map.get(tag_datum.strftime("%A"), tag_datum.strftime("%A"))
-                            if tag_datum in eintraege:
-                                for eintrag in eintraege[tag_datum]:
-                                    wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): {eintrag}")
+                            tag = sonntag + pd.Timedelta(days=i)
+                            wd = wochentage_deutsch_map[tag.strftime("%A")]
+                            if tag in daten:
+                                for e in daten[tag]:
+                                    wochen_eintraege.append(f"{tag.strftime('%d.%m.%Y')} ({wd}): {e}")
                             else:
-                                wochen_eintraege.append(f"{tag_datum.strftime('%d.%m.%Y')} ({wochentag}): –")
+                                wochen_eintraege.append(f"{tag.strftime('%d.%m.%Y')} ({wd}): –")
 
-                        try:
-                            nachname, vorname = [s.strip() for s in fahrer_name.split(",")]
-                        except ValueError:
-                            nachname, vorname = fahrer_name.strip(), ""
+                        html = generate_html(fahrer, wochen_eintraege, kw, sonntag, css_styles)
+                        fname = f"KW{kw:02d}_{fahrer.split(',')[0]}.html"
+                        path = os.path.join(tmpdir, fname)
 
-                        sonder_dateien = {
-                            ("fechner", "klaus"): "KFechner",
-                            ("fechner", "danny"): "Fechner",
-                            ("scheil", "rene"): "RScheil",
-                            ("scheil", "eric"): "Scheil",
-                            ("schulz", "julian"): "Schulz",
-                            ("schulz", "stephan"): "STSchulz",
-                            ("lewandowski", "kamil"): "Lewandowski",
-                            ("lewandowski", "dominik"): "DLewandowski",
-                        }
+                        with open(path, "w", encoding="utf-8") as f:
+                            f.write(html)
 
-                        n_clean = nachname.strip().lower()
-                        v_clean = vorname.strip().lower()
-                        filename_part = sonder_dateien.get((n_clean, v_clean), nachname.replace(" ", "_"))
-                        filename = f"KW{kw:02d}_{filename_part}.html"
-
-                        html_code = generate_html(fahrer_name, wochen_eintraege, kw, start_sonntag, css_styles)
-
-                        folder_name = f"KW{kw:02d}"
-                        full_path = os.path.join(tmpdir, folder_name, filename)
-                        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-                        with open(full_path, "w", encoding="utf-8") as f:
-                            f.write(html_code)
-
-                        filename_lower = filename.lower()
-                        if "ch._holtz" in filename_lower or any(stichwort in filename_lower for stichwort in ausschluss_stichwoerter):
-                            os.remove(full_path)
-                            continue
-
-                        zipf.write(full_path, arcname=os.path.join(folder_name, filename))
+                        zipf.write(path, fname)
 
             with open(zip_path, "rb") as f:
-                zip_bytes = f.read()
-
-            if st.checkbox("Automatisch auf FTP hochladen", value=False):
-                if not all([FTP_HOST, FTP_USER, FTP_PASS]):
-                    st.warning("FTP-Zugangsdaten fehlen in .env")
-                else:
-                    st.info("Starte FTP-Upload...")
-                    upload_folder_to_ftp_with_progress(tmpdir, FTP_BASE_DIR)
-
-            st.success(f"{len(uploaded_files)} Dateien verarbeitet.")
-            st.download_button("ZIP mit allen HTML-Dateien herunterladen", data=zip_bytes, file_name="gesamt_export.zip", mime="application/zip")
+                st.download_button(
+                    "ZIP mit HTML-Dateien herunterladen",
+                    f.read(),
+                    file_name="gesamt_export.zip",
+                    mime="application/zip"
+                )
 
     except Exception as e:
-        st.error(f"Fehler beim Verarbeiten: {e}")
+        st.error(f"Fehler: {e}")
