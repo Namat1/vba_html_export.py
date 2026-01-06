@@ -219,7 +219,7 @@ body {
   font-weight: 700;
 }
 
-/* ===== Pills (Tag/Uhrzeit/Tour) ===== */
+/* ===== Pills (clean) ===== */
 .pill-row{
   display:flex;
   gap:8px;
@@ -235,7 +235,7 @@ body {
   align-items:center;
   justify-content:center;
   padding: 0 10px;
-  font-weight: 700;
+  font-weight: 650;
   font-size: 0.82rem;
   white-space: nowrap;
 }
@@ -251,17 +251,16 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Tour: nur minimal hervorgehoben (ruhig, clean) */
 .pill-tour{
   width: 160px;
   overflow:hidden;
   text-overflow: ellipsis;
 
-  /* Hervorhebung (clean) */
-  background: #eaf2ff;
-  border-color: #b6cff5;
-  color: #0f3d8c;
-  font-weight: 800;
-  box-shadow: inset 0 0 0 1px rgba(15,61,140,0.05);
+  background: #edf2f7;     /* minimal dunkler als die anderen */
+  border-color: #b7c3d3;    /* minimal kräftigerer Rand */
+  font-weight: 750;         /* leicht stärker */
+  color: #111827;           /* neutral */
 }
 
 @media (max-width: 440px) {
